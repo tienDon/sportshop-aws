@@ -65,8 +65,24 @@ class ProductService {
       const category = await Category.findOne({ slug: category_slug })
         .select("_id")
         .lean();
+
       if (category) {
-        query["category_ids._id"] = category._id;
+        // Find all descendant categories
+        const ids = [category._id];
+        const queue = [category._id];
+
+        while (queue.length > 0) {
+          const parentId = queue.shift();
+          const children = await Category.find({ parent_id: parentId })
+            .select("_id")
+            .lean();
+          for (const child of children) {
+            ids.push(child._id);
+            queue.push(child._id);
+          }
+        }
+
+        query["category_ids._id"] = { $in: ids };
       } else {
         return {
           pagination: {
@@ -142,7 +158,10 @@ class ProductService {
   }
 
   static async getFeaturedProducts(limit = 12) {
-    const products = await Product.getFeaturedProducts(parseInt(limit));
+    // Fallback: Get latest products since is_featured is not in schema
+    const products = await Product.find({ is_active: true })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
     return {
       data: products,
       count: products.length,
@@ -150,7 +169,9 @@ class ProductService {
   }
 
   static async getNewArrivals(limit = 12) {
-    const products = await Product.getNewArrivals(parseInt(limit));
+    const products = await Product.find({ is_active: true })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
     return {
       data: products,
       count: products.length,
@@ -158,7 +179,10 @@ class ProductService {
   }
 
   static async getBestSellers(limit = 12) {
-    const products = await Product.getBestSellers(parseInt(limit));
+    // Fallback: Get latest products since sold_count is not in schema
+    const products = await Product.find({ is_active: true })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
     return {
       data: products,
       count: products.length,
@@ -174,32 +198,37 @@ class ProductService {
       ...filters
     } = queryParams;
 
-    const category = await Category.findBySlug(categorySlug);
+    const category = await Category.findOne({ slug: categorySlug });
     if (!category) {
       throw new Error("CATEGORY_NOT_FOUND");
     }
 
-    let categoryIds = [category._id];
-    if (category.level < 2) {
-      const subcategories = await Category.find({
-        parentCategory: category._id,
-        isActive: true,
-      });
-      categoryIds = categoryIds.concat(subcategories.map((sub) => sub._id));
+    // Find all descendant categories
+    const ids = [category._id];
+    const queue = [category._id];
+
+    while (queue.length > 0) {
+      const parentId = queue.shift();
+      const children = await Category.find({ parent_id: parentId })
+        .select("_id")
+        .lean();
+      for (const child of children) {
+        ids.push(child._id);
+        queue.push(child._id);
+      }
     }
 
     const query = {
-      category: { $in: categoryIds },
-      isActive: true,
-      status: "active",
+      "category_ids._id": { $in: ids },
+      is_active: true,
     };
 
-    if (filters.brand) query.brand = filters.brand;
+    if (filters.brand) query["brand._id"] = filters.brand;
     if (filters.minPrice)
-      query.originalPrice = { $gte: parseFloat(filters.minPrice) };
+      query.base_price = { $gte: parseFloat(filters.minPrice) };
     if (filters.maxPrice) {
-      query.originalPrice = query.originalPrice || {};
-      query.originalPrice.$lte = parseFloat(filters.maxPrice);
+      query.base_price = query.base_price || {};
+      query.base_price.$lte = parseFloat(filters.maxPrice);
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -207,8 +236,6 @@ class ProductService {
     sortObj[sort] = order === "desc" ? -1 : 1;
 
     const products = await Product.find(query)
-      .populate("category", "name slug")
-      .populate("brand", "name slug logo")
       .sort(sortObj)
       .skip(skip)
       .limit(parseInt(limit));
@@ -234,15 +261,14 @@ class ProductService {
       order = "desc",
     } = queryParams;
 
-    const brand = await Brand.findBySlug(brandSlug);
+    const brand = await Brand.findOne({ slug: brandSlug });
     if (!brand) {
       throw new Error("BRAND_NOT_FOUND");
     }
 
     const query = {
-      brand: brand._id,
-      isActive: true,
-      status: "active",
+      "brand._id": brand._id,
+      is_active: true,
     };
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -250,8 +276,6 @@ class ProductService {
     sortObj[sort] = order === "desc" ? -1 : 1;
 
     const products = await Product.find(query)
-      .populate("category", "name slug")
-      .populate("brand", "name slug logo")
       .sort(sortObj)
       .skip(skip)
       .limit(parseInt(limit));
@@ -270,14 +294,13 @@ class ProductService {
   }
 
   static async getProductBySlug(slug) {
-    const product = await Product.findBySlug(slug);
+    const product = await Product.findOne({ slug, is_active: true });
     if (!product) {
       throw new Error("PRODUCT_NOT_FOUND");
     }
 
-    await Product.findByIdAndUpdate(product._id, {
-      $inc: { viewCount: 1 },
-    });
+    // View count is not in schema, skipping update
+    // await Product.findByIdAndUpdate(product._id, { $inc: { viewCount: 1 } });
 
     return product;
   }
@@ -286,7 +309,20 @@ class ProductService {
     const { q, ...filters } = queryParams;
     if (!q) throw new Error("MISSING_QUERY");
 
-    const products = await Product.searchProducts(q, filters);
+    const query = {
+      name: { $regex: q, $options: "i" },
+      is_active: true,
+    };
+
+    // Apply other filters if needed (simplified)
+    if (filters.minPrice)
+      query.base_price = { $gte: parseFloat(filters.minPrice) };
+    if (filters.maxPrice) {
+      query.base_price = query.base_price || {};
+      query.base_price.$lte = parseFloat(filters.maxPrice);
+    }
+
+    const products = await Product.find(query).limit(20);
     return {
       data: products,
       query: q,
@@ -306,7 +342,7 @@ class ProductService {
       new: true,
       runValidators: true,
     }).populate("category brand");
-    
+
     if (!product) throw new Error("PRODUCT_NOT_FOUND");
     return product;
   }

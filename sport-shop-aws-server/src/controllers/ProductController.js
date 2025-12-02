@@ -223,7 +223,10 @@ class ProductController {
    */
   static async updateProduct(req, res) {
     try {
-      const product = await ProductService.updateProduct(req.params.id, req.body);
+      const product = await ProductService.updateProduct(
+        req.params.id,
+        req.body
+      );
       return res.status(200).json({
         success: true,
         message: "Cập nhật sản phẩm thành công",
