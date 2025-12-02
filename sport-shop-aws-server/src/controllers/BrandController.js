@@ -7,35 +7,8 @@ class BrandController {
    */
   static async getAllBrands(req, res) {
     try {
-      const { featured, active = true, limit, sort = "sortOrder" } = req.query;
-
-      const query = {};
-
-      if (active !== undefined) {
-        query.isActive = active === "true";
-      }
-
-      if (featured !== undefined) {
-        query.isFeatured = featured === "true";
-      }
-
-      let brandsQuery = Brand.find(query);
-
-      // Sorting
-      if (sort === "name") {
-        brandsQuery = brandsQuery.sort({ name: 1 });
-      } else if (sort === "popularity") {
-        brandsQuery = brandsQuery.sort({ productCount: -1 });
-      } else {
-        brandsQuery = brandsQuery.sort({ sortOrder: 1 });
-      }
-
-      // Limit
-      if (limit) {
-        brandsQuery = brandsQuery.limit(parseInt(limit));
-      }
-
-      const brands = await brandsQuery;
+      // Lấy tất cả brand đang active, sắp xếp theo tên A-Z
+      const brands = await Brand.find({ is_active: true }).sort({ name: 1 });
 
       return res.status(200).json({
         success: true,

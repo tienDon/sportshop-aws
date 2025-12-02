@@ -22,7 +22,7 @@ const AuthDialog = () => {
   const [isSignup, setIsSignup] = useState(false);
 
   // Debug user state changes
-  console.log("AuthDialog render - user:", user, "otpSent:", otpSent);
+  // console.log("AuthDialog render - user:", user, "otpSent:", otpSent);
 
   const handleSignup = () => {
     setIsSignup((prev) => !prev);

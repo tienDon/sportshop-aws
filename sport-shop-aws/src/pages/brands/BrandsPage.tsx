@@ -6,34 +6,18 @@ import Breadcrumb from "@/components/ui/Breadcrumb";
 import { useQuery } from "@tanstack/react-query";
 import { BrandAPI } from "@/services/catalogApi";
 import type { Brand } from "@/types/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const BrandsPage = () => {
-  // Fetch featured brands
-  const {
-    data: featuredBrands,
-    isLoading: featuredLoading,
-    error: featuredError,
-  } = useQuery({
-    queryKey: ["brands", "featured"],
-    queryFn: () => BrandAPI.getFeaturedBrands(),
-  });
-
   // Fetch all brands
   const {
-    data: allBrands,
-    isLoading: allBrandsLoading,
-    error: allBrandsError,
+    data: brands,
+    isLoading,
+    error,
   } = useQuery({
     queryKey: ["brands", "all"],
     queryFn: () => BrandAPI.getAllBrands({ active: true }),
   });
-
-  // Get non-featured brands (other brands)
-  const otherBrands =
-    allBrands?.filter((brand: Brand) => !brand.isFeatured) || [];
-
-  const isLoading = featuredLoading || allBrandsLoading;
-  const error = featuredError || allBrandsError;
 
   const breadcrumbItems = [
     { label: "Trang chủ", href: "/" },
@@ -50,23 +34,28 @@ const BrandsPage = () => {
         <Breadcrumb items={breadcrumbItems} />
 
         {/* Page Header */}
-        <div className="py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            TẤT CẢ THƯƠNG HIỆU
+        <div className="py-8 text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 uppercase">
+            Thương Hiệu
           </h1>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Khám phá các thương hiệu thể thao hàng đầu thế giới tại SuperSports
+          </p>
         </div>
 
         {/* Loading State */}
         {isLoading && (
-          <div className="text-center py-12">
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-              <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse delay-75"></div>
-              <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse delay-150"></div>
-            </div>
-            <p className="mt-4 text-gray-600">
-              Đang tải danh sách thương hiệu...
-            </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 flex flex-col items-center space-y-4"
+              >
+                <Skeleton className="h-24 w-24 rounded-full" />
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            ))}
           </div>
         )}
 
@@ -79,77 +68,54 @@ const BrandsPage = () => {
           </div>
         )}
 
-        {!isLoading && !error && (
-          <div className="space-y-12">
-            {/* Featured Brands Section - SuperSports Style */}
-            {featuredBrands && featuredBrands.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 uppercase">
-                  THƯƠNG HIỆU NỔI BẬT
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-                  {featuredBrands.map((brand: Brand) => (
-                    <Link
-                      key={brand._id}
-                      to={`/collections/${brand.slug}`}
-                      className="group"
-                    >
-                      <div className="bg-white rounded-lg p-4 hover:shadow-md transition-all duration-300 border border-gray-100 group-hover:border-red-200">
-                        <div className="aspect-square flex items-center justify-center bg-white rounded-lg overflow-hidden">
-                          <img
-                            src={
-                              brand.logo ||
-                              `https://placehold.co/150x150/ffffff/000000?text=${brand.name.replace(
-                                /\s+/g,
-                                "+"
-                              )}`
-                            }
-                            alt={brand.name}
-                            className="w-full h-full object-contain p-2"
-                            loading="lazy"
-                          />
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
+        {/* Brands Grid */}
+        {!isLoading && !error && brands && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-16">
+            {brands.map((brand: Brand) => (
+              <Link
+                key={brand._id}
+                to={`/brands/${brand.slug}`}
+                className="group block h-full"
+              >
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-red-200 transition-all duration-300 h-full flex flex-col items-center text-center">
+                  {/* Logo Area */}
+                  <div className="w-32 h-32 mb-6 flex items-center justify-center bg-gray-50 rounded-full group-hover:bg-white transition-colors duration-300 overflow-hidden p-4">
+                    {brand.logo ? (
+                      <img
+                        src={brand.logo}
+                        alt={brand.name}
+                        className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-110"
+                      />
+                    ) : (
+                      <span className="text-2xl font-bold text-gray-400 group-hover:text-red-500 transition-colors">
+                        {brand.name.charAt(0)}
+                      </span>
+                    )}
+                  </div>
 
-            {/* Other Brands Section - SuperSports Style */}
-            {otherBrands && otherBrands.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 uppercase">
-                  THƯƠNG HIỆU KHÁC
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-                  {otherBrands.map((brand: Brand) => (
-                    <Link
-                      key={brand._id}
-                      to={`/collections/${brand.slug}`}
-                      className="group"
-                    >
-                      <div className="bg-white rounded-lg p-4 hover:shadow-md transition-all duration-300 border border-gray-100 group-hover:border-red-200">
-                        <div className="aspect-square flex items-center justify-center bg-white rounded-lg overflow-hidden">
-                          <img
-                            src={
-                              brand.logo ||
-                              `https://placehold.co/150x150/ffffff/000000?text=${brand.name.replace(
-                                /\s+/g,
-                                "+"
-                              )}`
-                            }
-                            alt={brand.name}
-                            className="w-full h-full object-contain p-2"
-                            loading="lazy"
-                          />
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                  {/* Content Area */}
+                  <div className="flex-1 flex flex-col items-center w-full">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-red-600 transition-colors">
+                      {brand.name}
+                    </h3>
+
+                    {brand.description ? (
+                      <p className="text-sm text-gray-500 line-clamp-2 mb-4">
+                        {brand.description}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-400 italic mb-4">
+                        Thương hiệu thể thao chính hãng
+                      </p>
+                    )}
+
+                    <span className="mt-auto text-sm font-medium text-red-600 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                      Xem sản phẩm &rarr;
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
+              </Link>
+            ))}
           </div>
         )}
       </Container>

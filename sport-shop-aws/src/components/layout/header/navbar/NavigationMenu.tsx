@@ -82,9 +82,9 @@ const NavigationMenu = () => {
                     {navItem.name}
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <div className="container mx-auto px-4 py-8 bg-white border shadow-lg w-[90vw] max-w-[1600px]">
+                    <div className="w-full px-8 py-8 bg-white">
                       <div
-                        className="grid gap-8"
+                        className="grid gap-8 container mx-auto"
                         style={{
                           gridTemplateColumns: `repeat(${navItem.children.length}, minmax(0, 1fr))`,
                         }}

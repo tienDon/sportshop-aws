@@ -14,6 +14,10 @@ const brandSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    logo: {
+      type: String,
+      default: null,
+    },
     description: {
       type: String,
       maxlength: 1000,

@@ -18,7 +18,7 @@ function NavigationMenu({
       data-slot="navigation-menu"
       data-viewport={viewport}
       className={cn(
-        "group/navigation-menu relative flex max-w-max flex-1 items-center justify-center",
+        "group/navigation-menu flex flex-1 items-center justify-center",
         className
       )}
       {...props}
@@ -104,7 +104,7 @@ function NavigationMenuViewport({
       <NavigationMenuPrimitive.Viewport
         data-slot="navigation-menu-viewport"
         className={cn(
-          "origin-top-center relative mt-0 overflow-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 h-[var(--radix-navigation-menu-viewport-height)] w-screen bg-white border-t-0 shadow-lg",
+          "origin-top-center relative mt-0 overflow-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 h-[var(--radix-navigation-menu-viewport-height)] w-full bg-white border-t-0 shadow-lg",
           className
         )}
         {...props}

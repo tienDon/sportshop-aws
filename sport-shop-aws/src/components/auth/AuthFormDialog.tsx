@@ -56,25 +56,19 @@ const AuthFormDialog = ({
     resolver: zodResolver(createAuthSchema(isSignup)),
   });
 
-  // Theo dõi sự thay đổi của otpSent
-  useEffect(() => {
-    console.log("🔄 otpSent đã thay đổi thành:", otpSent);
-  }, [otpSent]);
-
   const onsubmit = async (data: AuthFormData) => {
-    console.log("Form submitted with data:", data);
-
     try {
       const { requestOtp } = useAuthStore.getState();
-      
+
       // Tạo tên đầy đủ cho signup
-      const fullName = isSignup && data.firstName && data.lastName 
-        ? `${data.firstName} ${data.lastName}` 
-        : undefined;
+      const fullName =
+        isSignup && data.firstName && data.lastName
+          ? `${data.firstName} ${data.lastName}`
+          : undefined;
 
       // Gọi API requestOtp
       await requestOtp(data.identifier, fullName);
-      
+
       console.log("✅ OTP request successful");
     } catch (error) {
       console.error("Error submitting form:", error);

@@ -1,6 +1,20 @@
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
 import Brand from "../models/Brand.js";
+import Attribute from "../models/Attribute.js";
+import mongoose from "mongoose";
+
+// Helper function to slugify string
+const toSlug = (str) => {
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+};
 
 class ProductController {
   /**
@@ -10,211 +24,145 @@ class ProductController {
   static async getAllProducts(req, res) {
     try {
       const {
-        page = 1,
-        limit = 20,
-        category,
-        brand,
-        minPrice,
-        maxPrice,
-        gender,
-        sport,
-        featured,
-        newArrival,
-        bestSeller,
-        sort = "createdAt",
-        order = "desc",
-        search,
+        gender_slug, // Slug của Giới tính (ví dụ: nam, nu)
+        gender_id, // Giữ lại để tương thích ngược
+        category_slug, // Slug của Category (ví dụ: ao-thun)
+        sport_slug, // Slug của Sport (ví dụ: chay-bo)
+        brand_slug, // Slug của Brand (ví dụ: nike)
+        page = 1, // Trang hiện tại
+        limit = 20, // Số lượng sản phẩm trên mỗi trang
+        sort_by,
       } = req.query;
 
-      const query = {
-        isActive: true,
-        status: "active",
-      };
+      const pageInt = parseInt(page);
+      const limitInt = parseInt(limit);
+      const skip = (pageInt - 1) * limitInt; // Số lượng document cần bỏ qua
 
-      // Filters
-      // Handle category filtering with simplified logic
-      if (category) {
-        console.log(`Processing category: "${category}"`);
+      // 1. Xây dựng đối tượng truy vấn Mongoose
+      const query = { is_active: true };
 
-        // Main gender categories - filter by gender
-        if (category === "nam") {
-          query["attributes.gender"] = "men";
-          console.log("Applied gender filter: men");
-        } else if (category === "nu") {
-          query["attributes.gender"] = "women";
-          console.log("Applied gender filter: women");
-        } else if (category === "tre-em") {
-          query["attributes.gender"] = "kids";
-          console.log("Applied gender filter: kids");
-        }
-        // Special categories - filter by product flags
-        else if (category === "hang-moi") {
-          query.isNewArrival = true;
-          console.log("Applied new arrival filter");
-        } else if (category === "uu-dai") {
-          query.salePrice = { $exists: true, $ne: null };
-          console.log("Applied sale filter");
-        } else if (category === "featured") {
-          query.isFeatured = true;
-          console.log("Applied featured filter");
-        }
-        // Traditional category lookup (for subcategories later)
-        else {
-          // Check if category is a valid ObjectId, if not, treat as slug
-          if (category.match(/^[0-9a-fA-F]{24}$/)) {
-            query.category = category;
-          } else {
-            // Find category by slug
-            const categoryDoc = await Category.findOne({ slug: category });
-            console.log(`Looking for category with slug: "${category}"`);
-            console.log(`Found category:`, categoryDoc);
+      // -------------------------
+      // A. XỬ LÝ LỌC THEO GENDER (Attribute)
+      // -------------------------
+      if (gender_slug || gender_id) {
+        // Lấy Attribute Gender từ DB
+        const genderAttr = await Attribute.findOne({ code: "gender" });
 
-            if (categoryDoc) {
-              // Get all subcategories recursively
-              const allCategoryIds = [categoryDoc._id];
+        if (genderAttr) {
+          let targetValueId = null;
 
-              // Find direct subcategories
-              const subcategories = await Category.find({
-                parentCategory: categoryDoc._id,
-              });
-              subcategories.forEach((sub) => allCategoryIds.push(sub._id));
-
-              // Find sub-subcategories
-              for (const sub of subcategories) {
-                const subSubs = await Category.find({
-                  parentCategory: sub._id,
-                });
-                subSubs.forEach((subSub) => allCategoryIds.push(subSub._id));
-              }
-
-              console.log(`All category IDs to search:`, allCategoryIds);
-
-              // Search in all categories (main + subcategories)
-              query.category = { $in: allCategoryIds };
-            } else {
-              // If category not found, return empty results
-              return res.status(200).json({
-                success: true,
-                data: [],
-                message: `Category "${category}" not found`,
-                pagination: {
-                  page: parseInt(page),
-                  limit: parseInt(limit),
-                  total: 0,
-                  totalPages: 0,
-                },
-              });
+          if (gender_slug && genderAttr.values) {
+            // Tìm value có slug khớp với gender_slug
+            const matchedValue = genderAttr.values.find(
+              (val) => toSlug(val.value) === gender_slug
+            );
+            if (matchedValue) {
+              targetValueId = matchedValue._id;
             }
+          } else if (gender_id) {
+            targetValueId = new mongoose.Types.ObjectId(gender_id);
           }
-        }
-      }
 
-      if (brand) {
-        // Check if brand is a valid ObjectId, if not, treat as slug
-        if (brand.match(/^[0-9a-fA-F]{24}$/)) {
-          query.brand = brand;
-        } else {
-          // Find brand by slug
-          const brandDoc = await Brand.findOne({ slug: brand });
-          if (brandDoc) {
-            query.brand = brandDoc._id;
-          } else {
-            // If brand not found, return empty results
-            return res.status(200).json({
-              success: true,
-              data: [],
-              pagination: {
-                page: parseInt(page),
-                limit: parseInt(limit),
-                total: 0,
-                totalPages: 0,
+          if (targetValueId) {
+            query["attributes"] = {
+              $elemMatch: {
+                attr_id: genderAttr._id,
+                value_ids: targetValueId,
               },
-            });
+            };
           }
         }
       }
 
-      if (minPrice || maxPrice) {
-        query.originalPrice = {};
-        if (minPrice) query.originalPrice.$gte = parseFloat(minPrice);
-        if (maxPrice) query.originalPrice.$lte = parseFloat(maxPrice);
+      // -------------------------
+      // B. XỬ LÝ LỌC THEO CATEGORY SLUG
+      // -------------------------
+      if (category_slug) {
+        const category = await Category.findOne({ slug: category_slug })
+          .select("_id")
+          .lean();
+        if (category) {
+          // Lọc theo ID của Category trong mảng category_ids
+          query["category_ids._id"] = category._id;
+        } else {
+          // Nếu không tìm thấy category, trả về kết quả rỗng (tối ưu hơn là báo lỗi)
+          return res.status(200).json({
+            success: true,
+            pagination: {
+              page: pageInt,
+              limit: limitInt,
+              totalPages: 0,
+              totalItems: 0,
+            },
+            data: [],
+          });
+        }
       }
 
-      if (gender) {
-        query["attributes.gender"] = gender;
+      // -------------------------
+      // C. XỬ LÝ LỌC THEO SPORT SLUG (Embedded Document)
+      // -------------------------
+      if (sport_slug) {
+        // Mongoose tự động tìm kiếm trong mảng 'sports' có phần tử nào có slug khớp không
+        query["sports.slug"] = sport_slug;
       }
 
-      if (sport) {
-        query["attributes.sport"] = { $in: [sport] };
+      // -------------------------
+      // D. XỬ LÝ LỌC THEO BRAND SLUG (Embedded Document)
+      // -------------------------
+      if (brand_slug) {
+        const brand = await Brand.findOne({ slug: brand_slug })
+          .select("_id")
+          .lean();
+
+        if (brand) {
+          // BƯỚC 2: Lọc Product bằng _id của Brand trong đối tượng brand nhúng
+          query["brand._id"] = brand._id;
+        }
       }
 
-      if (featured === "true") {
-        query.isFeatured = true;
-      }
+      // Logic sắp xếp
+      let sortLogic = { createdAt: -1 }; // Default
+      if (sort_by === "price_asc") sortLogic = { base_price: 1 };
+      if (sort_by === "price_desc") sortLogic = { base_price: -1 };
+      if (sort_by === "name_asc") sortLogic = { name: 1 };
+      if (sort_by === "name_desc") sortLogic = { name: -1 };
 
-      if (newArrival === "true") {
-        query.isNewArrival = true;
-      }
+      // 2. Thực thi 2 truy vấn song song (Tối ưu hóa tốc độ)
+      const [products, totalItems] = await Promise.all([
+        // Truy vấn 1: Lấy dữ liệu sản phẩm cho trang hiện tại
+        Product.find(query)
+          .sort(sortLogic) // Thêm logic sắp xếp ở đây (ví dụ: { createdAt: -1 })
+          .skip(skip)
+          .limit(limitInt)
+          .lean() // Tăng tốc độ bằng cách trả về JSON thuần
+          .exec(),
 
-      if (bestSeller === "true") {
-        query.isBestSeller = true;
-      }
+        // Truy vấn 2: Đếm tổng số lượng document (cho phân trang)
+        Product.countDocuments(query),
+      ]);
 
-      // Search
-      if (search) {
-        query.$text = { $search: search };
-      }
+      // 3. Tính toán Metadata phân trang
+      const totalPages = Math.ceil(totalItems / limitInt);
 
-      // Pagination
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-
-      // Sort
-      const sortObj = {};
-      if (sort === "price") {
-        sortObj.originalPrice = order === "desc" ? -1 : 1;
-      } else if (sort === "name") {
-        sortObj.name = order === "desc" ? -1 : 1;
-      } else if (sort === "rating") {
-        sortObj["rating.average"] = order === "desc" ? -1 : 1;
-      } else if (sort === "popularity") {
-        sortObj.soldCount = order === "desc" ? -1 : 1;
-      } else {
-        sortObj[sort] = order === "desc" ? -1 : 1;
-      }
-
-      const products = await Product.find(query)
-        .populate("category", "name slug")
-        .populate("brand", "name slug logo")
-        .sort(sortObj)
-        .skip(skip)
-        .limit(parseInt(limit));
-
-      console.log("Final query:", JSON.stringify(query, null, 2));
-      console.log("Found products count:", products.length);
-      if (products.length > 0) {
-        console.log("Sample product:", JSON.stringify(products[0], null, 2));
-      }
-
-      const totalProducts = await Product.countDocuments(query);
-      const totalPages = Math.ceil(totalProducts / parseInt(limit));
-
+      // 4. Trả về Response
       return res.status(200).json({
         success: true,
-        data: products,
         pagination: {
-          currentPage: parseInt(page),
-          totalPages,
-          totalProducts,
-          hasNextPage: parseInt(page) < totalPages,
-          hasPrevPage: parseInt(page) > 1,
+          page: pageInt,
+          limit: limitInt,
+          totalPages: totalPages,
+          totalItems: totalItems,
+          hasNextPage: pageInt < totalPages, // Có trang kế tiếp
+          hasPrevPage: pageInt > 1, // Có trang trước
         },
+        data: products,
       });
     } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Lỗi lấy danh sách sản phẩm",
-        error: error.message,
-      });
+      console.error("Lỗi truy vấn sản phẩm:", error);
+      return res
+        .status(500)
+        .json({ success: false, message: "Lỗi Server nội bộ." });
     }
   }
 

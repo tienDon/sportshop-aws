@@ -28,7 +28,6 @@ export const useAuthStore = create<AuthState>()(
       setOtpToken: (token: string | null) => set({ otpToken: token }),
 
       clearState: () => {
-        console.log("Clearing auth state...");
         set({
           accessToken: null,
           user: null,
@@ -46,7 +45,6 @@ export const useAuthStore = create<AuthState>()(
               localStorage.removeItem(key);
             }
           });
-          console.log("Auth state and localStorage cleared");
         } catch (error) {
           console.error("Error clearing localStorage:", error);
         }

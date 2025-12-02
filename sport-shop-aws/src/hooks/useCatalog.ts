@@ -27,6 +27,7 @@ export function useNavigation() {
         setLoading(true);
         setError(null);
         const data = await NavigationAPI.getNavigationStructure();
+        console.log("navbar data: ", data);
         setNavigationData(data);
       } catch (err) {
         setError(

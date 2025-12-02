@@ -32,13 +32,13 @@ const seedDatabase = async () => {
 
     const brands = [
       {
-        // ID mẫu (Sẽ được tạo tự động nếu bạn không chỉ định)
-        // Dùng ID này để liên kết với Product demo sau này: '656910a7240c4a4f8d752c1a'
+        _id: "656910a7240c4a4f8d752c1a", // Fixed ID for Under Armour
         name: "Under Armour",
         slug: "under-armour",
         is_active: true,
       },
       {
+        _id: "656910a7240c4a4f8d752c1b", // Fixed ID for Nike
         name: "Nike",
         slug: "nike",
         is_active: true,
