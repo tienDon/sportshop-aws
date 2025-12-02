@@ -2,7 +2,6 @@ import Logo from "./Logo";
 import NavigationMenu from "./NavigationMenu";
 import SearchBar from "./SearchBar";
 import HeaderIcons from "./HeaderIcons";
-import UserMenu from "./UserMenu";
 
 const Navbar = () => {
   return (

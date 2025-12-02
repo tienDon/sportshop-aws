@@ -8,6 +8,7 @@ import authRoutes from "./src/routes/auth.js";
 import categoryRoutes from "./src/routes/categories.js";
 import brandRoutes from "./src/routes/brands.js";
 import productRoutes from "./src/routes/products.js";
+import navigationRoutes from "./src/routes/navigation.js";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/navigation", navigationRoutes);
 
 connectDB().then(() => {
   app.listen(port, () => {

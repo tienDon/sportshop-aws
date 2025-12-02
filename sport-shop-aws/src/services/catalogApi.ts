@@ -238,21 +238,8 @@ export class ProductAPI {
 export class NavigationAPI {
   // Get complete navigation structure
   static async getNavigationStructure(): Promise<NavigationStructure> {
-    const [categories, brands] = await Promise.all([
-      CategoryAPI.getNavigationCategories(),
-      BrandAPI.getFeaturedBrands(),
-    ]);
-
-    // Transform categories into navigation structure
-    const mainCategories = categories.map((category) => ({
-      category,
-      subcategories: category.subcategories || [],
-    }));
-
-    return {
-      mainCategories,
-      brands,
-    };
+    const response = await api.get("/api/navigation/main");
+    return response.data.data;
   }
 
   // Get navigation data for specific category

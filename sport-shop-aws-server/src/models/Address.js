@@ -22,7 +22,6 @@ const addressSchema = new mongoose.Schema(
       // Gom nhóm lại cho gọn
       street: { type: String, required: true, trim: true },
       ward: { type: String, required: true, trim: true },
-      district: { type: String, required: true, trim: true },
       city: { type: String, required: true, trim: true },
       country: { type: String, default: "Vietnam", trim: true },
     },

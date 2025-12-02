@@ -110,15 +110,8 @@ const orderSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
-    // 🚨 BỔ SUNG: Phí Vận chuyển
-    shipping_fee: {
-      type: Number,
-      required: true,
-      min: 0,
-      default: 0,
-    },
     total_final_amount: {
-      // total_gross - total_discount + shipping_fee
+      // total_gross - total_discount
       type: Number,
       required: true,
       min: 0,
@@ -131,19 +124,11 @@ const orderSchema = new mongoose.Schema(
       phone: { type: String, required: true },
       street: { type: String, required: true },
       ward: { type: String, required: true },
-      district: { type: String, required: true },
       city: { type: String, required: true },
       country: { type: String, default: "Vietnam" },
     },
 
-    // 2. Snapshot Shipping Method (Mô hình đúng)
-    shipping_method: {
-      method_id: { type: mongoose.Schema.Types.ObjectId, required: true },
-      name: { type: String, required: true },
-      estimated_time: { type: String, required: true },
-    },
-
-    // 3. Order Items (Sử dụng sub-schema)
+    // 2. Order Items (Sử dụng sub-schema)
     items: [orderItemSchema],
   },
   {

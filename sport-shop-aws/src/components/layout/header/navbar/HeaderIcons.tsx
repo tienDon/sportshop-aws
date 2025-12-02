@@ -1,7 +1,6 @@
 import AuthDialog from "@/components/auth/AuthDialog";
 import { Search, ShoppingBag } from "lucide-react";
-import { Link } from "react-router";
-import CartSheet from "./CartSheet";
+import CartSheet from "../CartSheet";
 
 const HeaderIcons = () => {
   return (

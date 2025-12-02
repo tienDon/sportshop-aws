@@ -132,12 +132,24 @@ export interface ProductResponse extends ApiResponse<Product[]> {}
 export interface ProductDetailResponse extends ApiResponse<Product> {}
 
 // Navigation specific types
-export interface NavigationCategory {
-  category: Category;
-  subcategories: Category[];
+export interface NavigationItem {
+  id: string;
+  name: string;
+  slug: string;
 }
 
-export interface NavigationStructure {
-  mainCategories: NavigationCategory[];
-  brands: Brand[];
+export interface NavigationColumn {
+  id: string;
+  name: string;
+  items: NavigationItem[];
 }
+
+export interface NavigationRoot {
+  id: string;
+  name: string;
+  slug: string;
+  type: "GENDER" | "CATEGORY" | "STATIC";
+  children: NavigationColumn[];
+}
+
+export type NavigationStructure = NavigationRoot[];

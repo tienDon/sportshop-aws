@@ -154,52 +154,8 @@ export function transformBrandsToDropdown(brands: Brand[]) {
 /**
  * Get dropdown content based on category title
  */
-export function getDropdownContent(
-  categoryTitle: string,
-  navigationData: NavigationStructure | null
-) {
-  if (!navigationData) return [];
-
-  switch (categoryTitle) {
-    case "Nam":
-      return transformCategoriesToDropdown(
-        navigationData.mainCategories.find((cat) => cat.category.slug === "nam")
-          ?.subcategories || []
-      );
-
-    case "Nữ":
-      return transformCategoriesToDropdown(
-        navigationData.mainCategories.find((cat) => cat.category.slug === "nu")
-          ?.subcategories || []
-      );
-
-    case "Trẻ Em":
-      return transformCategoriesToDropdown(
-        navigationData.mainCategories.find(
-          (cat) => cat.category.slug === "tre-em"
-        )?.subcategories || []
-      );
-
-    case "Thương Hiệu":
-      return transformBrandsToDropdown(navigationData.brands);
-
-    case "Bộ Sưu Tập":
-      return transformCategoriesToDropdown(
-        navigationData.mainCategories.find(
-          (cat) => cat.category.slug === "bo-suu-tap"
-        )?.subcategories || []
-      );
-
-    case "Thể Thao":
-      return transformCategoriesToDropdown(
-        navigationData.mainCategories.find(
-          (cat) => cat.category.slug === "sports"
-        )?.subcategories || []
-      );
-
-    default:
-      return [];
-  }
+export function getDropdownContent(categoryTitle: string, navigationData: any) {
+  return [];
 }
 
 /**

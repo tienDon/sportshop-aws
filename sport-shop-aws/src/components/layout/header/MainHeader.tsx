@@ -1,6 +1,6 @@
-import NavigationMenu from "./NavigationMenu";
-import Logo from "./Logo";
-import HeaderIcons from "./HeaderIcons";
+import NavigationMenu from "./navbar/NavigationMenu";
+import Logo from "./navbar/Logo";
+import HeaderIcons from "./navbar/HeaderIcons";
 
 const MainHeader = () => {
   return (
