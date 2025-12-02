@@ -1,0 +1,256 @@
+# categories:
+
+`{
+  _id: ObjectId,
+  parent_id: ObjectId, // null nếu là root
+  name: String,
+  slug: String,
+  is_active: Boolean,
+  // Ràng buộc Attribute nằm ngay tại đây (Thay cho bảng Category_Attribute_Relations)
+  attribute_config: [
+    {
+      attr_id: ObjectId, // Ref tới attributes
+      is_required: Boolean,
+      display_order: Number
+    }
+  ]
+}`
+
+# attributes
+
+`{
+  _id: ObjectId,
+  name: String, // "Giới tính", "Công nghệ"
+  code: String, // "gender", "technology"
+  is_filterable: Boolean,
+  // Embed values vào đây luôn vì danh sách này không quá lớn
+  values: [
+    {
+      _id: ObjectId, // value_id
+      value: String, // "Nam", "Charged Cotton"
+      sort_order: Number
+    }
+  ]
+}`
+
+# products
+
+`{
+\_id: ObjectId,
+name: String,
+slug: String,
+brand: { // Snapshot nhẹ brand để hiển thị card mà ko cần lookup
+\_id: ObjectId,
+name: String
+},
+base_price: Number,
+is_active: Boolean,
+description: String,
+specifications: String, // HTML hoặc Text
+note: String,
+
+// 1. Categories (Array các ref ID)
+category_ids: [
+{
+_id: ObjectId,
+is_primary: Boolean // Đánh dấu category chính
+}
+],
+
+// 2. Images (Embed trực tiếp thay vì bảng riêng)
+images: [
+{
+image_id: ObjectId, // Tự sinh
+url: String,
+sort_order: Number,
+is_main: Boolean, // Cờ chọn ảnh đại diện
+variant_ids: [ObjectId] // Ảnh này thuộc về biến thể nào (nếu có)
+}
+],
+
+// 3. Attributes (EAV + Custom Field)
+attributes: [
+{
+// Nếu là chuẩn hóa
+attr_id: ObjectId,
+value_id: ObjectId,
+
+      // Nếu là custom (nhập tay)
+      custom_name: String,
+      custom_value: String,
+      is_custom: Boolean // true/false
+    }
+
+],
+
+// 4. Variants (Embed trực tiếp)
+variants: [
+{
+variant_id: ObjectId, // Unique ID cho variant
+color: { // Snapshot màu
+_id: ObjectId,
+name: String,
+hex: String
+},
+size: { // Snapshot size
+_id: ObjectId,
+name: String
+},
+price: Number, // Giá riêng của variant (nếu khác base)
+stock_quantity: Number,
+sku: String
+}
+]
+}`
+
+# brands
+
+`{ _id, name, slug, description, banner }`
+
+# colors
+
+`{ _id, name, hex_code }
+`
+
+# sizes
+
+`{ _id, name, chart_type, sort_order }`
+
+# collections
+
+`{
+  _id: ObjectId,
+  name: String,
+  slug: String,
+  start_date: Date,
+  end_date: Date,
+  banner_url: String,
+  // Danh sách sản phẩm trong collection
+  product_refs: [
+    {
+      product_id: ObjectId,
+      sort_rank: Number
+    }
+  ]
+}`
+
+# promotions
+
+`{
+  _id: ObjectId,
+  name: String,
+  start_date: Date,
+  end_date: Date,
+  discount_type: String, // PERCENT, FIXED
+  discount_value: Number,
+  is_active: Boolean,
+  priority: Number,
+  // Targets (Embed mảng này vào)
+  targets: [
+    {
+      type: String, // PRODUCT, CATEGORY, BRAND
+      target_id: ObjectId
+    }
+  ]
+}`
+
+# carts
+
+`{
+\_id: ObjectId,
+user_id: ObjectId, // Nullable
+session_id: String,
+created_at: Date,
+updated_at: Date,
+coupon_code: String,
+items: [
+{
+variant_id: ObjectId,
+product_id: ObjectId, // Lưu thêm để dễ query hiển thị ảnh/tên
+quantity: Number,
+
+      // Snapshots giá
+      base_price_snapshot: Number,
+      final_price_snapshot: Number,
+
+      // Metadata khuyến mãi
+      auto_promotion_id: ObjectId
+    }
+
+]
+}`
+
+# orders
+
+`{
+\_id: ObjectId,
+user_id: ObjectId,
+order_date: Date,
+status: String, // PENDING, SHIPPING...
+payment_method: String,
+coupon_code_applied: String,
+
+// Tài chính (Financials)
+total_gross_amount: Number,
+total_discount_amount: Number,
+total_final_amount: Number,
+
+// 1. Snapshot Địa Chỉ (Embed object, ko chỉ lưu ID)
+shipping_address: {
+recipient_name: String,
+phone: String,
+street: String,
+ward: String,
+district: String,
+city: String,
+country: String
+},
+
+// 2. Snapshot Shipping Method
+shipping_method: {
+method_id: ObjectId,
+name: String,
+estimated_time: String
+},
+
+// 3. Order Items (Chi tiết sản phẩm)
+items: [
+{
+variant_id: ObjectId,
+product_id: ObjectId,
+product_name: String, // Snapshot tên sản phẩm lỡ sau này đổi tên
+quantity: Number,
+
+      // Các loại giá snapshot
+      base_price_snapshot: Number,  // Giá gốc
+      final_price_snapshot: Number, // Giá sau auto promo
+
+      // Chi tiết giảm giá
+      auto_promotion_id: ObjectId,
+      item_auto_discount_amount: Number,
+      item_coupon_discount_amount: Number,
+
+      // Giá thực trả cuối cùng (Net Revenue)
+      item_price_paid: Number
+    }
+
+]
+}`
+
+# addresses
+
+`{
+  _id: ObjectId,
+  user_id: ObjectId,
+  recipient_name: String,
+  phone: String,
+  address_details: { // Gom nhóm lại cho gọn
+    street: String,
+    ward: String,
+    district: String,
+    city: String,
+    country: String
+  },
+  is_default: Boolean,
+  is_billing: Boolean
+}`
