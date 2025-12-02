@@ -34,6 +34,8 @@ export const useProducts = (options: UseProductsOptions = {}) => {
           customPage || page,
           customLimit || limit
         );
+        console.log("products data: ", result);
+
         setData(result);
       } catch (err: any) {
         setError(err.response?.data?.message || "Lỗi tải sản phẩm");

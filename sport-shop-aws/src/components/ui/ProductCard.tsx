@@ -1,19 +1,20 @@
 import { Badge } from "@/components/ui/badge";
 
 interface ProductCardProps {
-  id: number;
+  id: string | number;
   name: string;
   image: string;
-  originalPrice: string;
-  salePrice: string;
-  discount: string;
-  rating: number;
-  reviews: number;
-  colors: string[];
+  originalPrice: string | number;
+  salePrice?: string | number;
+  discount?: string;
+  rating?: number;
+  reviews?: number;
+  colors?: string[];
   isBlackFriday?: boolean;
   lastChance?: boolean;
   brand: string;
   className?: string;
+  slug?: string;
 }
 
 const ProductCard = ({
@@ -60,14 +61,24 @@ const ProductCard = ({
     </div>
   );
 
+  const formatPrice = (price: string | number | undefined) => {
+    if (price === undefined || price === null) return "";
+    if (typeof price === "number") {
+      return new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }).format(price);
+    }
+    return price;
+  };
+
   return (
     <div
       className={`group bg-white rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer ${className}`}
     >
       <div className="relative overflow-hidden">
         <img
-          // src={image}
-          src="https://placehold.co/260x190"
+          src={image}
           alt={name}
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
         />
@@ -84,31 +95,11 @@ const ProductCard = ({
         )}
 
         {/* Discount Badge */}
-        <Badge className="absolute top-3 right-3 bg-red-500 hover:bg-red-500 text-white font-bold">
-          {discount}
-        </Badge>
-
-        {/* Last Chance Banner - với hiệu ứng "Trẻ em" như trong hình
-        {lastChance && (
-          <div className="absolute top-12 left-0">
-            <div className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-r-full transform -skew-x-12">
-              Trẻ em
-            </div>
-          </div>
+        {discount && (
+          <Badge className="absolute top-3 right-3 bg-red-500 hover:bg-red-500 text-white font-bold">
+            {discount}
+          </Badge>
         )}
-
-        {/* Bottom Banner - "CƠ HỘI DUY NHẤT" */}
-        {/* {lastChance && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-r from-green-400 to-green-600 text-white text-center py-2">
-            <div className="flex items-center justify-center gap-2 text-xs font-bold">
-              <span>21 - 30.11</span>
-              <span className="text-yellow-300">CƠ HỘI DUY NHẤT</span>
-            </div>
-          </div>
-        )} */}
-
-        {/* Hover overlay */}
-        {/* <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-5 transition-all duration-300" /> */}
       </div>
 
       <div className="p-4">
@@ -124,20 +115,30 @@ const ProductCard = ({
 
         {/* Rating and Reviews */}
         <div className="flex items-center gap-2 mb-3">
-          {renderStars(rating)}
-          <span className="text-xs text-gray-500">{reviews} đánh giá</span>
+          {renderStars(rating || 0)}
+          <span className="text-xs text-gray-500">{reviews || 0} đánh giá</span>
         </div>
 
         {/* Price */}
         <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-base font-bold text-red-600">{salePrice}</span>
-          <span className="text-xs text-gray-400 line-through">
-            {originalPrice}
-          </span>
+          {salePrice ? (
+            <>
+              <span className="text-base font-bold text-red-600">
+                {formatPrice(salePrice)}
+              </span>
+              <span className="text-xs text-gray-400 line-through">
+                {formatPrice(originalPrice)}
+              </span>
+            </>
+          ) : (
+            <span className="text-base font-bold text-gray-900">
+              {formatPrice(originalPrice)}
+            </span>
+          )}
         </div>
 
         {/* Color Options */}
-        {renderColorOptions(colors)}
+        {colors && renderColorOptions(colors)}
       </div>
     </div>
   );

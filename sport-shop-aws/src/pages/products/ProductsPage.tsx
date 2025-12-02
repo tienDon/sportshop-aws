@@ -26,7 +26,7 @@ import type { ProductFilters as APIProductFilters } from "@/services/productsApi
 
 const ProductsPage = () => {
   const { category, subcategory, subsubcategory, brand, sport } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<APIProductFilters>({});
   const [sortBy, setSortBy] = useState("newest");
@@ -37,24 +37,31 @@ const ProductsPage = () => {
 
   // Determine page type and build API filters
   const { pageType, apiFilters } = useMemo(() => {
-    const baseFilters: APIProductFilters = { ...filters };
+    const baseFilters: APIProductFilters = { ...filters, sort_by: sortBy };
 
     if (category && subcategory && subsubcategory) {
       return {
         pageType: { type: "nested", category, subcategory, subsubcategory },
         apiFilters: {
           ...baseFilters,
-          category: `${category}/${subcategory}/${subsubcategory}`,
+          category: subsubcategory,
         },
       };
     }
     if (category && subcategory) {
       return {
         pageType: { type: "subcategory", category, subcategory },
-        apiFilters: { ...baseFilters, category: `${category}/${subcategory}` },
+        apiFilters: { ...baseFilters, category: subcategory },
       };
     }
     if (category) {
+      // Check if category is actually a gender
+      if (["nam", "nu", "tre-em"].includes(category)) {
+        return {
+          pageType: { type: "gender", value: category },
+          apiFilters: { ...baseFilters, gender: category },
+        };
+      }
       return {
         pageType: { type: "category", category },
         apiFilters: { ...baseFilters, category },
@@ -90,6 +97,7 @@ const ProductsPage = () => {
     sport,
     searchQuery,
     filters,
+    sortBy,
   ]);
 
   // Use appropriate query hooks - all must be called at top level
@@ -97,7 +105,7 @@ const ProductsPage = () => {
     filters: apiFilters,
     page: currentPage,
     limit,
-    enabled: pageType.type === "all",
+    enabled: pageType.type === "all" || pageType.type === "gender",
   });
 
   const categoryProductsQuery = useProductsByCategory(
@@ -138,6 +146,8 @@ const ProductsPage = () => {
       case "subcategory":
       case "nested":
         return categoryProductsQuery;
+      case "gender":
+        return allProductsQuery;
       default:
         return allProductsQuery;
     }
@@ -148,11 +158,6 @@ const ProductsPage = () => {
     brandProductsQuery,
     searchProductsQuery,
   ]);
-
-  // Xác định loại page dựa trên URL
-  const getPageType = () => {
-    return pageType;
-  };
 
   // Tạo breadcrumb dựa trên page type
   const getBreadcrumb = () => {
@@ -203,6 +208,14 @@ const ProductsPage = () => {
           .replace(/\b\w/g, (l) => l.toUpperCase());
         items.push({ label: subsubcategoryLabel, href: "" });
       }
+    } else if (pageType.type === "gender") {
+      const label =
+        pageType.value === "nam"
+          ? "Nam"
+          : pageType.value === "nu"
+          ? "Nữ"
+          : "Trẻ em";
+      items.push({ label, href: "" });
     } else if (pageType.type === "brand") {
       items.push({ label: pageType.value?.toUpperCase() || "", href: "" });
     } else if (pageType.type === "sport") {
@@ -216,7 +229,13 @@ const ProductsPage = () => {
 
   // Lọc sản phẩm dựa trên URL params và filters - bây giờ được handle bởi API
   const getPageTitle = () => {
-    if (pageType.type === "category") {
+    if (pageType.type === "gender") {
+      return pageType.value === "nam"
+        ? "Sản phẩm Nam"
+        : pageType.value === "nu"
+        ? "Sản phẩm Nữ"
+        : "Sản phẩm Trẻ em";
+    } else if (pageType.type === "category") {
       return category === "nam"
         ? "Sản phẩm Nam"
         : category === "nu"
@@ -286,7 +305,7 @@ const ProductsPage = () => {
         <div className="py-6">
           <h1 className="text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
           <p className="text-gray-600 mt-2">
-            {data?.pagination?.total || 0} sản phẩm
+            {data?.pagination?.totalItems || 0} sản phẩm
           </p>
         </div>
 
@@ -329,6 +348,9 @@ const ProductsPage = () => {
                       case "nested":
                         categoryProductsQuery.refetch();
                         break;
+                      case "gender":
+                        allProductsQuery.refetch();
+                        break;
                       default:
                         allProductsQuery.refetch();
                     }
@@ -347,28 +369,20 @@ const ProductsPage = () => {
                 {data?.data?.map((product) => (
                   <ProductCard
                     key={product._id}
-                    id={parseInt(product._id)}
+                    id={product._id}
                     name={product.name}
-                    image={product.images?.[0]?.url || ""}
-                    originalPrice={`${product.originalPrice?.toLocaleString()}₫`}
-                    salePrice={
-                      product.salePrice
-                        ? `${product.salePrice.toLocaleString()}₫`
-                        : ""
+                    slug={product.slug}
+                    image={
+                      product.images?.[0]?.url ||
+                      "https://placehold.co/600x600?text=No+Image"
                     }
-                    discount={
-                      product.originalPrice && product.salePrice
-                        ? `-${Math.round(
-                            ((product.originalPrice - product.salePrice) /
-                              product.originalPrice) *
-                              100
-                          )}%`
-                        : ""
-                    }
-                    rating={product.rating?.average || 0}
-                    reviews={product.rating?.count || 0}
-                    colors={product.attributes?.color || []}
-                    isBlackFriday={product.isBlackFriday || false}
+                    originalPrice={product.base_price}
+                    salePrice={undefined} // Backend chưa có sale price
+                    discount={undefined}
+                    rating={0} // Backend chưa có rating
+                    reviews={0}
+                    colors={product.variants?.map((v) => v.color.hex) || []}
+                    isBlackFriday={false}
                     brand={product.brand?.name || ""}
                   />
                 ))}

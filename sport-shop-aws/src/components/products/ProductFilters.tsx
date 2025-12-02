@@ -1,12 +1,8 @@
+import type { ProductFilters as APIProductFilters } from "@/services/productsApi";
+
 interface ProductFiltersProps {
-  filters: {
-    priceRange: number[];
-    brands: string[];
-    sizes: string[];
-    colors: string[];
-    sports: string[];
-  };
-  onFiltersChange: (filters: any) => void;
+  filters: APIProductFilters;
+  onFiltersChange: (filters: APIProductFilters) => void;
 }
 
 const ProductFilters = ({ filters, onFiltersChange }: ProductFiltersProps) => {

@@ -153,3 +153,54 @@ export interface NavigationRoot {
 }
 
 export type NavigationStructure = NavigationRoot[];
+
+export interface BackendProduct {
+  _id: string;
+  name: string;
+  slug: string;
+  brand: {
+    _id: string;
+    name: string;
+  };
+  base_price: number;
+  is_active: boolean;
+  description: string;
+  sports: {
+    _id: string;
+    name: string;
+    slug: string;
+  }[];
+  category_ids: {
+    _id: string;
+    is_primary: boolean;
+  }[];
+  images: {
+    url: string;
+    sort_order: number;
+    is_main: boolean;
+    _id: string;
+  }[];
+  attributes: {
+    attr_id: string;
+    value_ids: string[];
+    _id: string;
+  }[];
+  variants: {
+    variant_id: string;
+    color: {
+      _id: string;
+      name: string;
+      hex: string;
+    };
+    size: {
+      _id: string;
+      name: string;
+    };
+    price: number | null;
+    stock_quantity: number;
+    sku: string;
+    _id: string;
+  }[];
+  createdAt: string;
+  updatedAt: string;
+}
