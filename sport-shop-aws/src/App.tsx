@@ -39,6 +39,7 @@ const App = () => {
 
           {/* Collections routes - All products */}
           <Route path="/collections" element={<ProductsPage />} />
+          <Route path="/products/:slug" element={<ProductDetailPage />} />
 
           {/* Collections routes - 3 cấp độ */}
           <Route path="/collections/:category" element={<ProductsPage />} />
@@ -60,7 +61,6 @@ const App = () => {
           <Route path="/sports/:sport" element={<ProductsPage />} />
 
           {/* Product detail */}
-          <Route path="/products/:productId" element={<ProductDetailPage />} />
 
           {/* Search */}
           <Route path="/search" element={<ProductsPage />} />

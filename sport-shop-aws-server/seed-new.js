@@ -804,7 +804,7 @@ const seedDatabase = async () => {
     const products = [
       {
         _id: PRODUCT_IDS.AoThunUA,
-        name: "Áo Thun Tập Luyện UA Tech 2.0 (Nam)",
+        name: "Áo Thun Tập Luyện UA Tech 2.0",
         slug: "ua-tech-2-0-short-sleeve-t-shirt-nam",
         base_price: 890000,
         is_active: true,
@@ -900,7 +900,7 @@ const seedDatabase = async () => {
       },
       {
         _id: PRODUCT_IDS.QuanShortNike,
-        name: "Quần Short Nike Dri-FIT (Nam)",
+        name: "Quần Short Nike Dri-FIT ",
         slug: "nike-dri-fit-shorts-nam",
         base_price: 750000,
         is_active: true,

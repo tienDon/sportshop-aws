@@ -13,6 +13,7 @@ const productSchema = new mongoose.Schema(
       required: true,
       lowercase: true,
       trim: true,
+      unique: true,
     },
 
     // 1. BRAND: Sửa lỗi tham chiếu và yêu cầu
@@ -101,7 +102,7 @@ const productSchema = new mongoose.Schema(
           default: false,
         },
         variant_ids: [
-          // Cho phép 1 ảnh áp dụng cho nhiều variant
+          // Cho phép 1 ảnh áp dụng cho nhiều variant (Liên kết với _id trong mảng variants bên dưới)
           {
             type: mongoose.Schema.Types.ObjectId,
           },
@@ -186,7 +187,6 @@ const productSchema = new mongoose.Schema(
 );
 
 // Indexes (Đã sửa sport và bỏ ref)
-productSchema.index({ slug: 1 }, { unique: true });
 productSchema.index({ "brand._id": 1 });
 productSchema.index({ "sports._id": 1 }); // Index cho mảng sports
 productSchema.index({ is_active: 1 });

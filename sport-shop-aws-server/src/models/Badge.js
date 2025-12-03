@@ -26,8 +26,6 @@ const badgeSchema = new mongoose.Schema({
   },
 });
 
-badgeSchema.index({ slug: 1 });
-
 const Badge = mongoose.model("Badge", badgeSchema);
 
 export default Badge;

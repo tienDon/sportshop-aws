@@ -105,6 +105,7 @@ export interface ProductSummary {
   };
   main_image_url: string | null;
   badge?: ProductBadge;
+  colors?: string[];
 }
 
 // Navigation Types

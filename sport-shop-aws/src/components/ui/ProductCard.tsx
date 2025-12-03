@@ -1,5 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import type { ProductBadge } from "@/types/api";
+import { ShoppingCart } from "lucide-react";
+import { Link } from "react-router";
 
 interface ProductCardProps {
   id: string | number;
@@ -9,40 +11,44 @@ interface ProductCardProps {
   salePrice?: string | number;
   badge?: ProductBadge;
   rating?: number;
-  reviews?: number;
+  // reviews?: number;
   colors?: string[];
   brand: string;
   className?: string;
   slug?: string;
+  breadcrumb?: { label: string; href: string }[]; // Thêm prop breadcrumb
 }
 
 const ProductCard = ({
+  id,
   name,
   image,
   originalPrice,
   salePrice,
   badge,
-  rating,
-  reviews,
+  // rating,
+  // reviews,
   colors,
   brand,
   className = "",
+  slug,
+  breadcrumb,
 }: ProductCardProps) => {
-  const renderStars = (rating: number) => {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
+  // const renderStars = (rating: number) => {
+  //   const fullStars = Math.floor(rating);
+  //   const hasHalfStar = rating % 1 !== 0;
 
-    return (
-      <div className="flex items-center text-yellow-400">
-        {[...Array(fullStars)].map((_, i) => (
-          <span key={i} className="text-sm">
-            ★
-          </span>
-        ))}
-        {hasHalfStar && <span className="text-sm">☆</span>}
-      </div>
-    );
-  };
+  //   return (
+  //     <div className="flex items-center text-yellow-400">
+  //       {[...Array(fullStars)].map((_, i) => (
+  //         <span key={i} className="text-sm">
+  //           ★
+  //         </span>
+  //       ))}
+  //       {hasHalfStar && <span className="text-sm">☆</span>}
+  //     </div>
+  //   );
+  // };
 
   const renderColorOptions = (colors: string[]) => (
     <div className="flex gap-1 mt-2">
@@ -59,6 +65,12 @@ const ProductCard = ({
     </div>
   );
 
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Logic để thêm sản phẩm vào giỏ hàng
+    console.log(`Thêm sản phẩm ${id} vào giỏ hàng`);
+  };
+
   const formatPrice = (price: string | number | undefined) => {
     if (price === undefined || price === null) return "";
     if (typeof price === "number") {
@@ -70,7 +82,7 @@ const ProductCard = ({
     return price;
   };
 
-  return (
+  const CardContent = (
     <div
       className={`group bg-white rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer ${className}`}
     >
@@ -103,39 +115,50 @@ const ProductCard = ({
           {name}
         </h3>
 
-        {/* Rating and Reviews */}
-        {(rating !== undefined || reviews !== undefined) && (
-          <div className="flex items-center gap-2 mb-3">
-            {renderStars(rating || 0)}
-            <span className="text-xs text-gray-500">
-              {reviews || 0} đánh giá
-            </span>
-          </div>
-        )}
-
-        {/* Price */}
-        <div className="flex items-baseline gap-2 mb-3">
-          {salePrice ? (
-            <>
-              <span className="text-base font-bold text-red-600">
-                {formatPrice(salePrice)}
-              </span>
-              <span className="text-xs text-gray-400 line-through">
-                {formatPrice(originalPrice)}
-              </span>
-            </>
-          ) : (
-            <span className="text-base font-bold text-gray-900">
-              {formatPrice(originalPrice)}
-            </span>
-          )}
-        </div>
-
         {/* Color Options */}
         {colors && renderColorOptions(colors)}
+
+        <div className="flex items-center justify-between mt-3">
+          {/* Price */}
+          <div className="flex items-baseline gap-2">
+            {salePrice ? (
+              <>
+                <span className="text-base font-bold text-red-600">
+                  {formatPrice(salePrice)}
+                </span>
+                <span className="text-xs text-gray-400 line-through">
+                  {formatPrice(originalPrice)}
+                </span>
+              </>
+            ) : (
+              <span className="text-base font-bold text-gray-900">
+                {formatPrice(originalPrice)}
+              </span>
+            )}
+          </div>
+
+          {/* Cart Button */}
+          <button
+            className="p-2 rounded-full bg-gray-50 text-gray-900 hover:bg-blue-600 hover:text-white transition-all duration-200 shadow-sm"
+            onClick={handleAddToCart}
+            title="Thêm vào giỏ hàng"
+          >
+            <ShoppingCart className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
   );
+
+  if (slug) {
+    return (
+      <Link to={`/products/${slug}`} state={{ breadcrumb }}>
+        {CardContent}
+      </Link>
+    );
+  }
+
+  return CardContent;
 };
 
 export default ProductCard;

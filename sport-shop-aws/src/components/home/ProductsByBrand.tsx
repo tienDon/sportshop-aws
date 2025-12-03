@@ -147,7 +147,6 @@ const ProductsByBrand = () => {
                 : undefined
             }
             rating={product.rating}
-            reviews={product.reviews}
             colors={product.colors}
             brand={brandButtons.find((b) => b.id === selectedBrand)?.name || ""}
           />

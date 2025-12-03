@@ -158,7 +158,7 @@ class ProductService {
 
     const [products, totalItems] = await Promise.all([
       Product.find(query)
-        .select("_id name slug base_price brand images badge")
+        .select("_id name slug base_price brand images badge variants")
         .populate("badge", "slug display_text display_color")
         .sort(sortLogic)
         .skip(skip)
@@ -172,6 +172,14 @@ class ProductService {
     const transformedProducts = products.map((product) => {
       const mainImage =
         product.images?.find((img) => img.is_main) || product.images?.[0];
+
+      // Extract unique colors from variants
+      const colors = [
+        ...new Set(
+          product.variants?.map((v) => v.color?.hex).filter(Boolean) || []
+        ),
+      ];
+
       return {
         _id: product._id,
         name: product.name,
@@ -180,6 +188,7 @@ class ProductService {
         brand: product.brand,
         main_image_url: mainImage ? mainImage.url : null,
         badge: product.badge,
+        colors: colors,
       };
     });
 
@@ -199,13 +208,47 @@ class ProductService {
   }
 
   static async getProductBySlug(slug) {
-    const product = await Product.findOne({ slug, is_active: true });
+    const product = await Product.findOne({ slug, is_active: true })
+      .populate({
+        path: "category_ids._id",
+        model: "Category",
+        select: "name slug parent_id",
+      })
+      .populate("badge", "slug display_text display_color")
+      .lean();
+
     if (!product) {
       throw new Error("PRODUCT_NOT_FOUND");
     }
 
-    // View count is not in schema, skipping update
-    // await Product.findByIdAndUpdate(product._id, { $inc: { viewCount: 1 } });
+    // Populate Attributes Manually
+    if (product.attributes && product.attributes.length > 0) {
+      const attrIds = product.attributes.map((a) => a.attr_id);
+      const attributes = await Attribute.find({ _id: { $in: attrIds } }).lean();
+
+      // Map attributes to product
+      product.attributes = product.attributes.map((prodAttr) => {
+        const attrDef = attributes.find(
+          (a) => a._id.toString() === prodAttr.attr_id.toString()
+        );
+        if (!attrDef) return prodAttr;
+
+        // Map values
+        const values = attrDef.values.filter((v) =>
+          prodAttr.value_ids.some((id) => id.toString() === v._id.toString())
+        );
+
+        return {
+          ...prodAttr,
+          name: attrDef.name,
+          code: attrDef.code,
+          values: values.map((v) => ({
+            _id: v._id,
+            value: v.value,
+          })),
+        };
+      });
+    }
 
     return product;
   }

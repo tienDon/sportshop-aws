@@ -64,8 +64,12 @@ const ProductListing = ({
 
   return (
     <>
-      {/* Breadcrumb */}
-      <Breadcrumb items={breadcrumbItems} />
+      {/* Breadcrumb - Last item should not be a link */}
+      <Breadcrumb
+        items={breadcrumbItems.map((item, index) =>
+          index === breadcrumbItems.length - 1 ? { ...item, href: "" } : item
+        )}
+      />
 
       {/* Page Header */}
       <div className="py-6">
@@ -126,8 +130,9 @@ const ProductListing = ({
                   salePrice={undefined}
                   badge={product.badge}
                   rating={0}
-                  reviews={0}
                   brand={product.brand?.name || ""}
+                  colors={product.colors}
+                  breadcrumb={breadcrumbItems} // Truyền breadcrumb xuống
                 />
               ))}
             </div>
