@@ -137,12 +137,18 @@ const ProductsByBrand = () => {
             image={product.image}
             originalPrice={product.originalPrice}
             salePrice={product.salePrice}
-            discount={product.discount}
+            badge={
+              product.discount
+                ? {
+                    display_text: product.discount,
+                    display_color: "#EF4444",
+                    slug: "discount",
+                  }
+                : undefined
+            }
             rating={product.rating}
             reviews={product.reviews}
             colors={product.colors}
-            isBlackFriday={product.isBlackFriday}
-            lastChance={product.lastChance}
             brand={brandButtons.find((b) => b.id === selectedBrand)?.name || ""}
           />
         ))}

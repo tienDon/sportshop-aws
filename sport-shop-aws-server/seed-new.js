@@ -29,6 +29,7 @@ const seedDatabase = async () => {
       Size.deleteMany({}),
       Sport.deleteMany({}),
       Product.deleteMany({}),
+      Badge.deleteMany({}),
     ]);
 
     const brands = [
@@ -983,6 +984,9 @@ const seedDatabase = async () => {
     console.log("🌱 Tạo categories...");
     const createdCategories = await Category.insertMany(categories);
 
+    console.log("🌱 Tạo badges...");
+    const createdBadges = await Badge.insertMany(badges);
+
     console.log("🌱 Tạo products...");
     const createdProducts = await Product.insertMany(products);
 
@@ -994,6 +998,7 @@ const seedDatabase = async () => {
     console.log(`   - ${createdColors.length} Colors`);
     console.log(`   - ${createdSizes.length} Sizes`);
     console.log(`   - ${createdSports.length} Sports`);
+    console.log(`   - ${createdBadges.length} Badges`);
     console.log(`   - ${createdProducts.length} Products`);
 
     process.exit(0);

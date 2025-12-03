@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import type { ProductBadge } from "@/types/api";
 
 interface ProductCardProps {
   id: string | number;
@@ -6,12 +7,10 @@ interface ProductCardProps {
   image: string;
   originalPrice: string | number;
   salePrice?: string | number;
-  discount?: string;
+  badge?: ProductBadge;
   rating?: number;
   reviews?: number;
   colors?: string[];
-  isBlackFriday?: boolean;
-  lastChance?: boolean;
   brand: string;
   className?: string;
   slug?: string;
@@ -22,11 +21,10 @@ const ProductCard = ({
   image,
   originalPrice,
   salePrice,
-  discount,
+  badge,
   rating,
   reviews,
   colors,
-  isBlackFriday = false,
   brand,
   className = "",
 }: ProductCardProps) => {
@@ -83,21 +81,13 @@ const ProductCard = ({
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
         />
 
-        {/* Black Friday Badge */}
-        {isBlackFriday && (
-          <div className="absolute top-3 left-3">
-            <div className="bg-black text-white text-xs font-bold px-2 py-1 transform -rotate-12">
-              <span className="text-green-400">BLACK</span>
-              <br />
-              <span className="text-green-400">FRIDAY</span>
-            </div>
-          </div>
-        )}
-
-        {/* Discount Badge */}
-        {discount && (
-          <Badge className="absolute top-3 right-3 bg-red-500 hover:bg-red-500 text-white font-bold">
-            {discount}
+        {/* Badge */}
+        {badge && (
+          <Badge
+            className="absolute top-3 right-3 text-white font-bold"
+            style={{ backgroundColor: badge.display_color }}
+          >
+            {badge.display_text}
           </Badge>
         )}
       </div>
@@ -114,10 +104,14 @@ const ProductCard = ({
         </h3>
 
         {/* Rating and Reviews */}
-        <div className="flex items-center gap-2 mb-3">
-          {renderStars(rating || 0)}
-          <span className="text-xs text-gray-500">{reviews || 0} đánh giá</span>
-        </div>
+        {(rating !== undefined || reviews !== undefined) && (
+          <div className="flex items-center gap-2 mb-3">
+            {renderStars(rating || 0)}
+            <span className="text-xs text-gray-500">
+              {reviews || 0} đánh giá
+            </span>
+          </div>
+        )}
 
         {/* Price */}
         <div className="flex items-baseline gap-2 mb-3">

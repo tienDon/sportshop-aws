@@ -3,19 +3,7 @@ import { useState, useMemo } from "react";
 import Header from "@/components/layout/header/Header";
 import AnnouncementBanner from "@/components/layout/header/AnnouncementBanner";
 import Container from "@/components/ui/Container";
-import ProductCard from "@/components/ui/ProductCard";
-import ProductFilters from "@/components/products/ProductFilters";
-import Breadcrumb from "@/components/ui/Breadcrumb";
-import ProductSort from "@/components/products/ProductSort";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
+import ProductListing from "@/components/products/ProductListing";
 import { useProducts } from "@/hooks/useProductsQuery";
 import type { ProductFilters as APIProductFilters } from "@/services/productsApi";
 
@@ -50,6 +38,14 @@ const ProductsPage = () => {
       };
     }
     if (category) {
+      // Check for "new-arrivals"
+      if (category === "new-arrivals") {
+        return {
+          pageType: { type: "badge", value: "hang-moi" },
+          apiFilters: { ...baseFilters, badge: "hang-moi" },
+        };
+      }
+
       // Check if category is actually a gender
       if (["nam", "nu", "tre-em"].includes(category)) {
         return {
@@ -161,6 +157,12 @@ const ProductsPage = () => {
       items.push({ label, href: "" });
     } else if (pageType.type === "brand") {
       items.push({ label: pageType.value?.toUpperCase() || "", href: "" });
+    } else if (pageType.type === "badge") {
+      if (pageType.value === "hang-moi") {
+        items.push({ label: "Hàng Mới", href: "" });
+      } else {
+        items.push({ label: pageType.value || "", href: "" });
+      }
     } else if (pageType.type === "sport") {
       items.push({ label: pageType.value || "", href: "" });
     } else if (pageType.type === "search") {
@@ -202,6 +204,9 @@ const ProductsPage = () => {
       return subsubcategoryLabel;
     } else if (pageType.type === "brand") {
       return `Sản phẩm ${pageType.value?.toUpperCase()}`;
+    } else if (pageType.type === "badge") {
+      if (pageType.value === "hang-moi") return "Hàng Mới Về";
+      return `Sản phẩm ${pageType.value}`;
     } else if (pageType.type === "sport") {
       return `Sản phẩm ${pageType.value}`;
     } else if (pageType.type === "search") {
@@ -216,194 +221,25 @@ const ProductsPage = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Generate pagination items
-  const generatePaginationItems = () => {
-    if (!data?.pagination) return [];
-
-    const { page, totalPages } = data.pagination;
-    const items = [];
-    const delta = 2; // Show 2 pages before and after current page
-
-    for (
-      let i = Math.max(1, page - delta);
-      i <= Math.min(totalPages, page + delta);
-      i++
-    ) {
-      items.push(i);
-    }
-
-    return items;
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       <AnnouncementBanner />
 
       <Container>
-        {/* Breadcrumb */}
-        <Breadcrumb items={getBreadcrumb()} />
-
-        {/* Page Header */}
-        <div className="py-6">
-          <h1 className="text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
-          <p className="text-gray-600 mt-2">
-            {data?.pagination?.totalItems || 0} sản phẩm
-          </p>
-        </div>
-
-        <div className="flex gap-8">
-          {/* Sidebar Filters */}
-          <div className="w-1/4">
-            <ProductFilters filters={filters} onFiltersChange={setFilters} />
-          </div>
-
-          {/* Main Content */}
-          <div className="w-3/4">
-            {/* Sort Options */}
-            <ProductSort sortBy={sortBy} onSortChange={setSortBy} />
-
-            {/* Products Grid */}
-            {isLoading ? (
-              <div className="text-center py-12">
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse"></div>
-                  <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse delay-75"></div>
-                  <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse delay-150"></div>
-                </div>
-                <p className="mt-4 text-gray-600">Đang tải sản phẩm...</p>
-              </div>
-            ) : error ? (
-              <div className="text-center py-12">
-                <p className="text-red-600">Có lỗi xảy ra khi tải sản phẩm</p>
-                <button
-                  onClick={() => refetch()}
-                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Thử lại
-                </button>
-              </div>
-            ) : data?.data?.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-600">Không tìm thấy sản phẩm nào</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
-                {data?.data?.map((product) => (
-                  <ProductCard
-                    key={product._id}
-                    id={product._id}
-                    name={product.name}
-                    slug={product.slug}
-                    image={
-                      product.images?.[0]?.url ||
-                      "https://placehold.co/600x600?text=No+Image"
-                    }
-                    originalPrice={product.base_price}
-                    salePrice={undefined} // Backend chưa có sale price
-                    discount={undefined}
-                    rating={0} // Backend chưa có rating
-                    reviews={0}
-                    colors={product.variants?.map((v) => v.color.hex) || []}
-                    isBlackFriday={false}
-                    brand={product.brand?.name || ""}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Pagination */}
-            {data?.pagination && data.pagination.totalPages > 1 && (
-              <div className="flex justify-center mt-12">
-                <Pagination>
-                  <PaginationContent>
-                    {data.pagination.page > 1 && (
-                      <PaginationItem>
-                        <PaginationPrevious
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handlePageChange(data.pagination.page - 1);
-                          }}
-                        />
-                      </PaginationItem>
-                    )}
-
-                    {data.pagination.page > 3 && (
-                      <>
-                        <PaginationItem>
-                          <PaginationLink
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handlePageChange(1);
-                            }}
-                          >
-                            1
-                          </PaginationLink>
-                        </PaginationItem>
-                        {data.pagination.page > 4 && (
-                          <PaginationItem>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        )}
-                      </>
-                    )}
-
-                    {generatePaginationItems().map((pageNumber) => (
-                      <PaginationItem key={pageNumber}>
-                        <PaginationLink
-                          href="#"
-                          isActive={pageNumber === data.pagination.page}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handlePageChange(pageNumber);
-                          }}
-                        >
-                          {pageNumber}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-
-                    {data.pagination.page < data.pagination.totalPages - 2 && (
-                      <>
-                        {data.pagination.page <
-                          data.pagination.totalPages - 3 && (
-                          <PaginationItem>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        )}
-                        <PaginationItem>
-                          <PaginationLink
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handlePageChange(data.pagination.totalPages);
-                            }}
-                          >
-                            {data.pagination.totalPages}
-                          </PaginationLink>
-                        </PaginationItem>
-                      </>
-                    )}
-
-                    {data.pagination.page < data.pagination.totalPages && (
-                      <PaginationItem>
-                        <PaginationNext
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handlePageChange(data.pagination.page + 1);
-                          }}
-                        />
-                      </PaginationItem>
-                    )}
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
-          </div>
-        </div>
+        <ProductListing
+          title={getPageTitle()}
+          breadcrumbItems={getBreadcrumb()}
+          filters={filters}
+          onFiltersChange={setFilters}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          data={data}
+          isLoading={isLoading}
+          error={error}
+          onPageChange={handlePageChange}
+          onRefetch={refetch}
+        />
       </Container>
     </div>
   );

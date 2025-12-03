@@ -88,6 +88,25 @@ export interface BackendProduct {
   updatedAt: string;
 }
 
+export interface ProductBadge {
+  slug: string;
+  display_text: string;
+  display_color: string;
+}
+
+export interface ProductSummary {
+  _id: string;
+  name: string;
+  slug: string;
+  base_price: number;
+  brand: {
+    _id: string;
+    name: string;
+  };
+  main_image_url: string | null;
+  badge?: ProductBadge;
+}
+
 // Navigation Types
 export interface NavigationItem {
   id: string;

@@ -2,6 +2,7 @@ import Product from "../models/Product.js";
 import Category from "../models/Category.js";
 import Brand from "../models/Brand.js";
 import Attribute from "../models/Attribute.js";
+import Badge from "../models/Badge.js";
 import mongoose from "mongoose";
 
 // Helper function to slugify string
@@ -24,6 +25,7 @@ class ProductService {
       category_slug,
       sport_slug,
       brand_slug,
+      badge_slug,
       page = 1,
       limit = 20,
       sort_by,
@@ -125,6 +127,28 @@ class ProductService {
       }
     }
 
+    // E. Badge
+    if (badge_slug) {
+      const badge = await Badge.findOne({ slug: badge_slug })
+        .select("_id")
+        .lean();
+      if (badge) {
+        query["badge"] = badge._id;
+      } else {
+        return {
+          pagination: {
+            page: pageInt,
+            limit: limitInt,
+            totalPages: 0,
+            totalItems: 0,
+            hasNextPage: false,
+            hasPrevPage: false,
+          },
+          data: [],
+        };
+      }
+    }
+
     // Sort
     let sortLogic = { createdAt: -1 };
     if (sort_by === "price_asc") sortLogic = { base_price: 1 };
@@ -134,6 +158,8 @@ class ProductService {
 
     const [products, totalItems] = await Promise.all([
       Product.find(query)
+        .select("_id name slug base_price brand images badge")
+        .populate("badge", "slug display_text display_color")
         .sort(sortLogic)
         .skip(skip)
         .limit(limitInt)
@@ -141,6 +167,21 @@ class ProductService {
         .exec(),
       Product.countDocuments(query),
     ]);
+
+    // Transform data for frontend optimization
+    const transformedProducts = products.map((product) => {
+      const mainImage =
+        product.images?.find((img) => img.is_main) || product.images?.[0];
+      return {
+        _id: product._id,
+        name: product.name,
+        slug: product.slug,
+        base_price: product.base_price,
+        brand: product.brand,
+        main_image_url: mainImage ? mainImage.url : null,
+        badge: product.badge,
+      };
+    });
 
     const totalPages = Math.ceil(totalItems / limitInt);
 
@@ -153,7 +194,7 @@ class ProductService {
         hasNextPage: pageInt < totalPages,
         hasPrevPage: pageInt > 1,
       },
-      data: products,
+      data: transformedProducts,
     };
   }
 

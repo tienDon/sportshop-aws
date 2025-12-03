@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import type { BackendProduct } from "@/types/api";
+import type { BackendProduct, ProductSummary } from "@/types/api";
 
 export interface ProductFilters {
   category?: string;
@@ -14,11 +14,12 @@ export interface ProductFilters {
   newArrival?: boolean;
   bestSeller?: boolean;
   sort_by?: string;
+  badge?: string;
 }
 
 export interface ProductsResponse {
   success: boolean;
-  data: BackendProduct[];
+  data: ProductSummary[];
   pagination: {
     page: number;
     limit: number;
@@ -53,6 +54,7 @@ export class ProductsAPI {
     if (filters.maxPrice)
       params.append("max_price", filters.maxPrice.toString());
     if (filters.sort_by) params.append("sort_by", filters.sort_by);
+    if (filters.badge) params.append("badge_slug", filters.badge);
 
     // Handle special lists (featured, new arrivals, best sellers)
     // Note: The backend has separate endpoints for these, but if we want to filter them via getAllProducts,
