@@ -4,19 +4,19 @@ import AnnouncementBanner from "@/components/layout/header/AnnouncementBanner";
 import Container from "@/components/ui/Container";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { useQuery } from "@tanstack/react-query";
-import { BrandAPI } from "@/services/catalogApi";
+import { BrandAPI } from "@/services/brandApi";
 import type { Brand } from "@/types/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const BrandsPage = () => {
   // Fetch all brands
   const {
-    data: brands,
+    data: response,
     isLoading,
     error,
   } = useQuery({
     queryKey: ["brands", "all"],
-    queryFn: () => BrandAPI.getAllBrands({ active: true }),
+    queryFn: () => BrandAPI.getAllBrands(),
   });
 
   const breadcrumbItems = [
@@ -69,9 +69,9 @@ const BrandsPage = () => {
         )}
 
         {/* Brands Grid */}
-        {!isLoading && !error && brands && (
+        {!isLoading && !error && response?.data && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-16">
-            {brands.map((brand: Brand) => (
+            {response.data.map((brand: Brand) => (
               <Link
                 key={brand._id}
                 to={`/brands/${brand.slug}`}

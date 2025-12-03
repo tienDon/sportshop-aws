@@ -16,12 +16,7 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
-import {
-  useProducts,
-  useProductsByCategory,
-  useProductsByBrand,
-  useSearchProducts,
-} from "@/hooks/useProductsQuery";
+import { useProducts } from "@/hooks/useProductsQuery";
 import type { ProductFilters as APIProductFilters } from "@/services/productsApi";
 
 const ProductsPage = () => {
@@ -101,63 +96,11 @@ const ProductsPage = () => {
   ]);
 
   // Use appropriate query hooks - all must be called at top level
-  const allProductsQuery = useProducts({
+  const { data, isLoading, error, refetch } = useProducts({
     filters: apiFilters,
     page: currentPage,
     limit,
-    enabled: pageType.type === "all" || pageType.type === "gender",
   });
-
-  const categoryProductsQuery = useProductsByCategory(
-    apiFilters.category || "",
-    {
-      filters: apiFilters,
-      page: currentPage,
-      limit,
-      enabled:
-        pageType.type === "category" ||
-        pageType.type === "subcategory" ||
-        pageType.type === "nested",
-    }
-  );
-
-  const brandProductsQuery = useProductsByBrand(pageType.value || "", {
-    filters: apiFilters,
-    page: currentPage,
-    limit,
-    enabled: pageType.type === "brand",
-  });
-
-  const searchProductsQuery = useSearchProducts(pageType.value || "", {
-    filters: apiFilters,
-    page: currentPage,
-    limit,
-    enabled: pageType.type === "search",
-  });
-
-  // Select the correct query result based on page type
-  const { data, isLoading, error } = useMemo(() => {
-    switch (pageType.type) {
-      case "brand":
-        return brandProductsQuery;
-      case "search":
-        return searchProductsQuery;
-      case "category":
-      case "subcategory":
-      case "nested":
-        return categoryProductsQuery;
-      case "gender":
-        return allProductsQuery;
-      default:
-        return allProductsQuery;
-    }
-  }, [
-    pageType.type,
-    allProductsQuery,
-    categoryProductsQuery,
-    brandProductsQuery,
-    searchProductsQuery,
-  ]);
 
   // Tạo breadcrumb dựa trên page type
   const getBreadcrumb = () => {
@@ -334,27 +277,7 @@ const ProductsPage = () => {
               <div className="text-center py-12">
                 <p className="text-red-600">Có lỗi xảy ra khi tải sản phẩm</p>
                 <button
-                  onClick={() => {
-                    // Refetch the appropriate query
-                    switch (pageType.type) {
-                      case "brand":
-                        brandProductsQuery.refetch();
-                        break;
-                      case "search":
-                        searchProductsQuery.refetch();
-                        break;
-                      case "category":
-                      case "subcategory":
-                      case "nested":
-                        categoryProductsQuery.refetch();
-                        break;
-                      case "gender":
-                        allProductsQuery.refetch();
-                        break;
-                      default:
-                        allProductsQuery.refetch();
-                    }
-                  }}
+                  onClick={() => refetch()}
                   className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
                   Thử lại

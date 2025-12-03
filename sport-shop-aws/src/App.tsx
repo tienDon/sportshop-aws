@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router";
 import HomePage from "./pages/home/HomePage";
 import ProductsPage from "./pages/products/ProductsPage";
-import ProductDetailPage from "./pages/products/ProductDetailPage";
+import ProductDetailPage from "./pages/product-detail/ProductDetailPage";
 import BrandsPage from "./pages/brands/BrandsPage";
 import { Toaster } from "sonner";
 import { useAuthStore } from "./store/useAuthStore";

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router";
+﻿import { Link, useNavigate } from "react-router";
 import {
   NavigationMenu as ShadcnNavMenu,
   NavigationMenuContent,
@@ -7,15 +7,17 @@ import {
   NavigationMenuTrigger,
   NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
-import { useNavigation } from "@/hooks/useCatalog";
+import { useNavigation } from "@/hooks/useNavigationQuery";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { NavigationRoot } from "@/types/api";
 
 const NavigationMenu = () => {
   const navigate = useNavigate();
-  const { navigationData, loading, error } = useNavigation();
+  const { data: response, isLoading, error } = useNavigation();
+  const navigationData = response?.data;
 
   // Loading skeleton
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center w-full">
         <div className="flex space-x-4">
@@ -48,7 +50,7 @@ const NavigationMenu = () => {
     return `/collections/${parentSlug}/${itemSlug}`;
   };
 
-  const getParentHref = (navItem: any) => {
+  const getParentHref = (navItem: NavigationRoot) => {
     if (navItem.slug === "thuong-hieu") return "/brands";
     if (navItem.slug === "the-thao") return "/collections?type=sport";
     return `/collections/${navItem.slug}`;

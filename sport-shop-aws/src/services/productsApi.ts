@@ -63,64 +63,6 @@ export class ProductsAPI {
     return response.data;
   }
 
-  // Get products by category slug
-  static async getProductsByCategory(
-    categorySlug: string,
-    filters: Omit<ProductFilters, "category"> = {},
-    page = 1,
-    limit = 20
-  ): Promise<ProductsResponse> {
-    return this.getProducts(
-      { ...filters, category: categorySlug },
-      page,
-      limit
-    );
-  }
-
-  // Get products by brand slug
-  static async getProductsByBrand(
-    brandSlug: string,
-    filters: Omit<ProductFilters, "brand"> = {},
-    page = 1,
-    limit = 20
-  ): Promise<ProductsResponse> {
-    return this.getProducts({ ...filters, brand: brandSlug }, page, limit);
-  }
-
-  // Get featured products
-  static async getFeaturedProducts(
-    limit = 12
-  ): Promise<{ data: BackendProduct[]; count: number }> {
-    const response = await api.get(`/api/products/featured?limit=${limit}`);
-    return response.data;
-  }
-
-  // Get new arrivals
-  static async getNewArrivals(
-    limit = 12
-  ): Promise<{ data: BackendProduct[]; count: number }> {
-    const response = await api.get(`/api/products/new-arrivals?limit=${limit}`);
-    return response.data;
-  }
-
-  // Get best sellers
-  static async getBestSellers(
-    limit = 12
-  ): Promise<{ data: BackendProduct[]; count: number }> {
-    const response = await api.get(`/api/products/best-sellers?limit=${limit}`);
-    return response.data;
-  }
-
-  // Search products
-  static async searchProducts(
-    query: string,
-    filters: ProductFilters = {},
-    page = 1,
-    limit = 20
-  ): Promise<ProductsResponse> {
-    return this.getProducts({ ...filters, search: query }, page, limit);
-  }
-
   // Get product by slug
   static async getProductBySlug(slug: string): Promise<BackendProduct> {
     const response = await api.get(`/api/products/slug/${slug}`);
