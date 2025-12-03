@@ -7,6 +7,7 @@ import Color from "./src/models/Color.js";
 import Size from "./src/models/Size.js";
 import Sport from "./src/models/Sport.js";
 import Product from "./src/models/Product.js";
+import Badge from "./src/models/Badge.js";
 
 dotenv.config();
 import { connectDB } from "./src/libs/db.js";
@@ -892,6 +893,9 @@ const seedDatabase = async () => {
             sku: "UA-TECH-BLUE-L",
           },
         ],
+
+        // 7. BADGES (Reference Array) - Optional
+        badge: BADGE_IDS.Sale50,
       },
       {
         _id: PRODUCT_IDS.QuanShortNike,
@@ -954,6 +958,9 @@ const seedDatabase = async () => {
             sku: "NIKE-SHORT-BLACK-M",
           },
         ],
+
+        // 7. BADGES (Reference Array) - Optional
+        badge: BADGE_IDS.NewArrival,
       },
     ];
 
@@ -1095,6 +1102,11 @@ export const VARIANT_IDS = {
   ),
 };
 
+export const BADGE_IDS = {
+  NewArrival: new mongoose.Types.ObjectId("656910a7240c4a4f8d752c43"), // ID cho "Hàng mới"
+  Sale50: new mongoose.Types.ObjectId("656910a7240c4a4f8d752c44"), // ID cho "Giảm 50%"
+};
+
 // Giả định các ID khác từ các file mẫu trước đó:
 const Brand_UA_ID = new mongoose.Types.ObjectId("656910a7240c4a4f8d752c1a"); // Under Armour ID
 const Brand_Nike_ID = new mongoose.Types.ObjectId("656910a7240c4a4f8d752c1b"); // Nike ID
@@ -1109,3 +1121,20 @@ const Sport_Training_ID = new mongoose.Types.ObjectId(
 const Sport_Running_ID = new mongoose.Types.ObjectId(
   "656910a7240c4a4f8d752c22"
 ); // Chạy Bộ ID
+
+const badges = [
+  {
+    _id: BADGE_IDS.NewArrival,
+    name: "New Arrivals",
+    slug: "hang-moi",
+    display_text: "MỚI",
+    display_color: "#00CC00", // Màu xanh lá
+  },
+  {
+    _id: BADGE_IDS.Sale50,
+    name: "50% Off",
+    slug: "giam-50-phan-tram",
+    display_text: "GIẢM 50%",
+    display_color: "#FF0000", // Màu đỏ
+  },
+];

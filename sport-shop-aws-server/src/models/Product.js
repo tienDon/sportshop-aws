@@ -172,6 +172,13 @@ const productSchema = new mongoose.Schema(
         },
       },
     ],
+
+    // THÊM: 7. Badge (Sử dụng Reference)
+    badge: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Badge", // Tham chiếu đến Model Badge mới
+      default: null, // Có thể không có badge
+    },
   },
   {
     timestamps: true,
@@ -185,6 +192,7 @@ productSchema.index({ "sports._id": 1 }); // Index cho mảng sports
 productSchema.index({ is_active: 1 });
 productSchema.index({ "category_ids._id": 1 });
 productSchema.index({ base_price: 1 });
+productSchema.index({ badge: 1 });
 
 const Product = mongoose.model("Product", productSchema);
 
