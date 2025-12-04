@@ -9,6 +9,7 @@ import categoryRoutes from "./src/routes/categories.js";
 import brandRoutes from "./src/routes/brands.js";
 import productRoutes from "./src/routes/products.js";
 import navigationRoutes from "./src/routes/navigation.js";
+import cartRoutes from "./src/routes/cart.js";
 
 dotenv.config();
 
@@ -34,9 +35,9 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/navigation", navigationRoutes);
+app.use("/api/cart", cartRoutes);
 
-connectDB().then(() => {
-  app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-  });
+app.listen(port, () => {
+  connectDB();
+  console.log(`Server is running on port ${port}`);
 });

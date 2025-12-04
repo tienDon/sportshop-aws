@@ -29,10 +29,12 @@ const cartItemSchema = new mongoose.Schema(
       sku: { type: String, default: null },
       color_name: { type: String, required: true },
       size_name: { type: String, required: true },
-      image_url: { type: String, default: null }, // Ảnh đại diện
+      image_url: { type: String, required: true }, // Ảnh đại diện
+      brand_name: { type: String, required: true }, // <--- Thêm cái này để đỡ query
     },
 
     // Snapshots giá & Khuyến mãi
+    // Vẫn giữ để đối chiếu lịch sử hoặc tính toán lúc thanh toán
     base_price_snapshot: {
       type: Number,
       required: true,

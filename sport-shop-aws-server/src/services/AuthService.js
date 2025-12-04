@@ -5,6 +5,8 @@ import Session from "../models/Session.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
+const ACCESS_TOKEN_EXPIRES_IN = "15m";
+
 class AuthService {
   /**
    * Request OTP - Xử lý cả signup và signin
@@ -97,7 +99,7 @@ class AuthService {
             type: "otp_session",
           },
           process.env.JWT_ACCESS_SECRET || "access_secret_key",
-          { expiresIn: "5m" } // Cùng thời gian với OTP
+          { expiresIn: ACCESS_TOKEN_EXPIRES_IN } // Cùng thời gian với OTP
         );
 
         return {
@@ -136,7 +138,7 @@ class AuthService {
             type: "otp_session",
           },
           process.env.JWT_ACCESS_SECRET || "access_secret_key",
-          { expiresIn: "5m" }
+          { expiresIn: ACCESS_TOKEN_EXPIRES_IN } // Cùng thời gian với OTP
         );
 
         return {
@@ -212,7 +214,7 @@ class AuthService {
       const accessToken = jwt.sign(
         { userId: user._id, name: user.name },
         process.env.JWT_ACCESS_SECRET || "access_secret_key",
-        { expiresIn: "15m" }
+        { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
       );
 
       // Tạo refresh token bằng crypto
@@ -281,7 +283,7 @@ class AuthService {
       const accessToken = jwt.sign(
         { userId: user._id, name: user.name },
         process.env.JWT_ACCESS_SECRET || "access_secret_key",
-        { expiresIn: "15m" }
+        { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
       );
 
       return {
@@ -341,7 +343,7 @@ class AuthService {
             type: "otp_session",
           },
           process.env.JWT_ACCESS_SECRET || "access_secret_key",
-          { expiresIn: "5m" }
+          { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
         );
 
         return {
