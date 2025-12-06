@@ -33,6 +33,30 @@ export interface Category {
   path: string;
 }
 
+// Color Type
+export interface Color {
+  _id: string;
+  name: string;
+  hex: string;
+}
+
+// Size Type
+export interface Size {
+  _id: string;
+  name: string;
+}
+
+// Variant Type
+export interface Variant {
+  _id: string;
+  variant_id: string;
+  color: Color;
+  size: Size;
+  price: number | null;
+  stock_quantity: number;
+  sku: string | null;
+}
+
 // Backend Product Type (Matches API Response)
 export interface BackendProduct {
   _id: string;
@@ -53,7 +77,12 @@ export interface BackendProduct {
     slug: string;
   }>;
   category_ids: Array<{
-    _id: string;
+    _id: {
+      _id: string;
+      name: string;
+      slug: string;
+      parent_id: string | null;
+    };
     is_primary: boolean;
   }>;
   images: Array<{
@@ -61,6 +90,7 @@ export interface BackendProduct {
     url: string;
     sort_order: number;
     is_main: boolean;
+    variant_ids?: string[];
   }>;
   attributes: Array<{
     attr_id: string;
@@ -68,22 +98,17 @@ export interface BackendProduct {
     custom_name?: string;
     custom_values?: string[];
     is_custom: boolean;
+    name?: string;
+    code?: string;
+    values?: Array<{ _id: string; value: string }>;
   }>;
-  variants: Array<{
-    variant_id: string;
-    color: {
-      _id: string;
-      name: string;
-      hex: string;
-    };
-    size: {
-      _id: string;
-      name: string;
-    };
-    price: number | null;
-    stock_quantity: number;
-    sku: string | null;
-  }>;
+  variants: Variant[];
+  badge?: {
+    _id: string;
+    slug: string;
+    display_text: string;
+    display_color: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

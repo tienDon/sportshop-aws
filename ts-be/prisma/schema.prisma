@@ -1,0 +1,505 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Brand {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  logo        String?
+  description String?  @db.Text
+  banner      String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products Product[]
+}
+
+model Sport {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  // description String?   @db.Text
+  // icon        String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products ProductSport[]
+}
+
+model Color {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  hexCode   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variants           ProductVariant[]
+  productColorImages ProductColorImage[] // Cho phép truy vấn tất cả Product đang dùng màu này để hiển thị ảnh
+}
+
+enum SizeChartType {
+  CLOTHING_MEN
+  CLOTHING_WOMEN
+  CLOTHING_KIDS
+  SHOES_MEN
+  SHOES_WOMEN
+  SHOES_KIDS
+  ACCESSORIES
+}
+
+model Size {
+  id        Int           @id @default(autoincrement())
+  name      String
+  chartType SizeChartType
+  sortOrder Int           @default(0)
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  variants ProductVariant[]
+
+  @@unique([name, chartType])
+}
+
+model Audience {
+  id        Int    @id @default(autoincrement())
+  name      String @unique @db.VarChar(50) // Ví dụ: "Nam", "Nữ", "Trẻ em"
+  slug      String @unique
+  sortOrder Int    @default(0) // Thứ tự hiển thị (quan trọng cho Navbar)
+
+  categoryAudiences CategoryAudience[] // Liên kết N:N với Category (Navbar)
+  productAudiences  ProductAudience[] // Liên kết N:N với Product (Lọc)
+}
+
+model Attribute {
+  id        Int      @id @default(autoincrement())
+  name      String
+  code      String   @unique
+  // isFilterable Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  values     AttributeValue[]
+  categories CategoryAttribute[]
+}
+
+model AttributeValue {
+  id          Int    @id @default(autoincrement())
+  attributeId Int
+  value       String @db.VarChar(100) // Ví dụ: "Cotton", "V-Neck"
+  // sortOrder   Int    @default(0)
+
+  attribute Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+
+  productAttributeValues ProductAttributeValue[]
+
+  @@unique([attributeId, value]) // Giá trị phải là duy nhất trong một Thuộc tính
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  parentId  Int?
+  name      String
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+
+  // Liên kết N:N với các bảng khác
+  productCategories  ProductCategory[] // Danh mục có Product
+  categoryAudiences  CategoryAudience[] // Danh mục có Audience (Dùng cho Navbar)
+  categoryAttributes CategoryAttribute[] // Danh mục có Attribute (Dùng cho Bộ lọc)
+}
+
+model Product {
+  id             Int      @id @default(autoincrement())
+  name           String
+  slug           String   @unique
+  brandId        Int
+  basePrice      Decimal  @db.Decimal(10, 2)
+  mainImageUrl   String?  @db.VarChar(500) // Ảnh chính cho Product Card
+  isActive       Boolean  @default(true)
+  description    String?  @db.Text
+  specifications String?  @db.Text // HTML or JSON
+  note           String?  @db.Text
+  badgeId        Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  brand Brand  @relation(fields: [brandId], references: [id])
+  badge Badge? @relation(fields: [badgeId], references: [id])
+
+  productSports          ProductSport[]
+  productCategories      ProductCategory[]
+  variants               ProductVariant[]
+  productAttributeValues ProductAttributeValue[]
+  collections            CollectionProduct[]
+  productAudiences       ProductAudience[]
+  cartItems              CartItem[]
+  orderItems             OrderItem[]
+  productColorImages     ProductColorImage[] // Cho phép truy vấn tất cả ảnh theo màu của sản phẩm
+}
+
+model ProductSport {
+  productId Int
+  sportId   Int
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sport   Sport   @relation(fields: [sportId], references: [id], onDelete: Cascade)
+
+  @@id([productId, sportId])
+}
+
+model ProductCategory {
+  productId  Int
+  categoryId Int
+  isPrimary  Boolean @default(false)
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+}
+
+model ProductAudience {
+  productId  Int
+  audienceId Int
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  audience Audience @relation(fields: [audienceId], references: [id], onDelete: Cascade)
+
+  @@id([productId, audienceId])
+}
+
+model CategoryAudience {
+  categoryId Int
+  audienceId Int
+  sortOrder  Int @default(0) // Thứ tự hiển thị trong Navbar
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  audience Audience @relation(fields: [audienceId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, audienceId])
+}
+
+model CategoryAttribute {
+  categoryId  Int
+  attributeId Int
+  // isRequired   Boolean @default(false)
+  // displayOrder Int     @default(0)
+
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  attribute Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, attributeId])
+}
+
+model ProductAttributeValue {
+  productId        Int
+  attributeValueId Int
+
+  product        Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributeValue AttributeValue @relation(fields: [attributeValueId], references: [id], onDelete: Cascade)
+
+  @@id([productId, attributeValueId])
+}
+
+model ProductVariant {
+  id            Int      @id @default(autoincrement())
+  productId     Int
+  colorId       Int
+  sizeId        Int
+  price         Decimal? @db.Decimal(10, 2) // Override base price
+  stockQuantity Int      @default(0)
+  sku           String?
+  // imageUrl ĐÃ ĐƯỢC LOẠI BỎ khỏi đây
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color   Color   @relation(fields: [colorId], references: [id])
+  size    Size    @relation(fields: [sizeId], references: [id])
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@unique([productId, colorId, sizeId])
+}
+
+model ProductColorImage {
+  id        Int     @id @default(autoincrement())
+  productId Int // <--- Lấy ID của Product
+  colorId   Int // <--- Lấy ID của Color (cùng với Product ID định nghĩa Gallery)
+  url       String  @db.VarChar(500)
+  sortOrder Int     @default(0)
+  isCover   Boolean @default(false)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color   Color   @relation(fields: [colorId], references: [id])
+
+  // Gallery ảnh được định nghĩa bởi tổ hợp Product + Color
+  @@unique([productId, colorId, url])
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AddressType {
+  HOME
+  WORK
+  OTHER
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  password    String
+  name        String
+  phone       String?
+  avatar      String?
+  dateOfBirth DateTime?
+  gender      Gender?
+  isActive    Boolean   @default(true)
+  role        Role      @default(CUSTOMER)
+  lastLoginAt DateTime?
+  loginCount  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  addresses Address[]
+  cart      Cart?
+  orders    Order[]
+  sessions  Session[]
+  otps      OTP[]
+}
+
+model Address {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  recipientName String
+  phone         String
+  street        String
+  city          String
+  district      String
+  ward          String
+  postalCode    String?
+  isDefault     Boolean     @default(false)
+  isBilling     Boolean     @default(false)
+  type          AddressType @default(HOME)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Badge {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  slug         String   @unique
+  displayText  String
+  displayColor String   @default("#000000")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  products Product[]
+}
+
+// model ProductImage {
+//   id        Int     @id @default(autoincrement())
+//   productId Int
+//   url       String
+//   sortOrder Int     @default(0)
+//   isMain    Boolean @default(false)
+//   colorId   Int?
+
+//   variantIds Json? // Optional: to link image to specific variants if needed
+
+//   color     Color?   @relation(fields: [colorId], references: [id])
+//   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+// }
+
+model Collection {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  startDate DateTime
+  endDate   DateTime
+  bannerUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products CollectionProduct[]
+}
+
+model CollectionProduct {
+  collectionId Int
+  productId    Int
+  sortRank     Int @default(0)
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, productId])
+}
+
+model Cart {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @unique
+  sessionId  String?  @unique
+  couponCode String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user  User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+}
+
+model CartItem {
+  id         Int     @id @default(autoincrement())
+  cartId     Int
+  productId  Int
+  variantId  Int
+  quantity   Int
+  isSelected Boolean @default(true)
+
+  cart    Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+
+  // THÊM: Đảm bảo 1 biến thể chỉ xuất hiện 1 lần trong 1 giỏ hàng
+  @@unique([cartId, variantId])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPING
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum PaymentMethod {
+  COD
+  BANK_TRANSFER
+  CREDIT_CARD
+  MOMO
+  ZALOPAY
+}
+
+model Order {
+  id                  Int           @id @default(autoincrement())
+  userId              Int
+  orderDate           DateTime      @default(now())
+  status              OrderStatus   @default(PENDING)
+  paymentMethod       PaymentMethod
+  couponCodeApplied   String?
+  totalGrossAmount    Decimal       @db.Decimal(12, 2)
+  totalDiscountAmount Decimal       @default(0) @db.Decimal(12, 2)
+  totalFinalAmount    Decimal       @db.Decimal(12, 2)
+
+  // Shipping Address Snapshot
+  shippingName    String
+  shippingPhone   String
+  shippingStreet  String
+  shippingWard    String
+  shippingCity    String
+  shippingCountry String @default("Vietnam")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  variantId Int
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2) // Price at time of order
+
+  // Snapshots
+  productNameSnapshot  String
+  variantSkuSnapshot   String
+  variantColorSnapshot String
+  variantSizeSnapshot  String
+
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+}
+
+enum PromotionDiscountType {
+  PERCENT
+  FIXED
+}
+
+model Promotion {
+  id            Int                   @id @default(autoincrement())
+  name          String
+  startDate     DateTime
+  endDate       DateTime
+  discountType  PromotionDiscountType
+  discountValue Decimal               @db.Decimal(10, 2)
+  isActive      Boolean               @default(true)
+  priority      Int                   @default(0)
+  targets       Json? // Stores array of { type: "PRODUCT"|"CATEGORY"|"BRAND", id: Int }
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+}
+
+model OTP {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  code       String
+  identifier String
+  isUsed     Boolean   @default(false)
+  isExpired  Boolean   @default(false)
+  expiresAt  DateTime
+  usedAt     DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

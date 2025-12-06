@@ -1,10 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import type { ProductBadge } from "@/types/api";
-import { ShoppingCart } from "lucide-react";
 import { Link } from "react-router";
 
 interface ProductCardProps {
-  id: string | number;
   name: string;
   image: string;
   originalPrice: string | number;
@@ -20,7 +18,6 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({
-  id,
   name,
   image,
   originalPrice,
@@ -64,12 +61,6 @@ const ProductCard = ({
       ))}
     </div>
   );
-
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    // Logic để thêm sản phẩm vào giỏ hàng
-    console.log(`Thêm sản phẩm ${id} vào giỏ hàng`);
-  };
 
   const formatPrice = (price: string | number | undefined) => {
     if (price === undefined || price === null) return "";
@@ -136,15 +127,14 @@ const ProductCard = ({
               </span>
             )}
           </div>
-
-          {/* Cart Button */}
+          {/* Cart Button
           <button
             className="p-2 rounded-full bg-gray-50 text-gray-900 hover:bg-blue-600 hover:text-white transition-all duration-200 shadow-sm"
             onClick={handleAddToCart}
             title="Thêm vào giỏ hàng"
           >
             <ShoppingCart className="w-5 h-5" />
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

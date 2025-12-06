@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    /* Core */
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    /* Output */
+    "outDir": "./dist",
+    // "rootDir": "./src", // Removed to allow imports from outside src
+
+    /* Type checking */
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+
+    /* Paths alias (hỗ trợ tsc-alias) */
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+
+  "include": ["src", "prisma", "generated"],
+  "exclude": ["node_modules", "dist"]
+}

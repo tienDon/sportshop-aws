@@ -119,7 +119,6 @@ const ProductListing = ({
               {data?.data?.map((product) => (
                 <ProductCard
                   key={product._id}
-                  id={product._id}
                   name={product.name}
                   slug={product.slug}
                   image={
