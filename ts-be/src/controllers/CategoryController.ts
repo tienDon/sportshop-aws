@@ -1,214 +1,175 @@
+import { CategoryService } from "@/services/CategoryService.js";
 import { Request, Response } from "express";
-import { prisma } from "../lib/prisma.js";
-import { ApiResponse } from "../types/index.js";
 
-/**
- * Get all main categories for navigation
- * GET /api/categories/navigation
- */
-export const getNavigationCategories = async (req: Request, res: Response) => {
+export const getCategoryTree = async (req: Request, res: Response) => {
   try {
-    const categories = await prisma.category.findMany({
-      where: {
-        level: 0,
-        isActive: true,
-        isNavigation: true,
-      },
-      include: {
-        children: {
-          where: { isActive: true, isNavigation: true },
-          orderBy: { sortOrder: "asc" },
-          include: {
-            children: {
-              where: { isActive: true, isNavigation: true },
-              orderBy: { sortOrder: "asc" },
-            },
-          },
-        },
-      },
-      orderBy: { sortOrder: "asc" },
-    });
-
-    res.status(200).json({
+    const categories = await CategoryService.getCategoryTree();
+    return res.status(200).json({
       success: true,
+      message: "Category tree fetched successfully",
       data: categories,
     });
-  } catch (error: any) {
-    res.status(500).json({
+  } catch (error) {
+    return res.status(500).json({
       success: false,
-      message: "Lỗi lấy danh mục navigation",
-      error: error.message,
+      message: "Internal server error",
+      error: (error as Error).message,
     });
   }
 };
-
-/**
- * Get all categories
- * GET /api/categories
- */
-export const getAllCategories = async (req: Request, res: Response) => {
+export const createCategory = async (req: Request, res: Response) => {
   try {
-    const { level, parent, featured, active = "true" } = req.query;
+    const { name, slug, parentId } = req.body;
 
-    const where: any = {};
-
-    if (active !== undefined) {
-      where.isActive = active === "true";
+    if (!name || !slug) {
+      res.status(400).json({
+        success: false,
+        message: "Name and slug are required",
+      });
+      return;
     }
-
-    if (level !== undefined) {
-      where.level = parseInt(level as string);
-    }
-
-    if (parent) {
-      where.parentId = Number(parent);
-    }
-
-    if (featured !== undefined) {
-      where.isFeatured = featured === "true";
-    }
-
-    const categories = await prisma.category.findMany({
-      where,
-      include: {
-        parent: {
-          select: { id: true, name: true, slug: true },
-        },
-      },
-      orderBy: [{ level: "asc" }, { sortOrder: "asc" }],
+    const category = await CategoryService.createCategory({
+      name,
+      slug,
+      parentId: Number(parentId) || null,
     });
+    res.status(201).json({
+      success: true,
+      message: "Category created successfully",
+      data: category,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
+};
+export const getCategoryById = async (req: Request, res: Response) => {};
 
+export const deleteAllCategories = async (req: Request, res: Response) => {
+  try {
+    // WARNING: This endpoint is for testing purposes only.
+    await CategoryService.deleteAllCategories();
     res.status(200).json({
       success: true,
-      data: {
-        categories: categories,
-        count: categories.length,
-      },
+      message: "All categories deleted successfully",
     });
-  } catch (error: any) {
-    res.status(500).json({
+  } catch (error) {
+    return res.status(500).json({
       success: false,
-      message: "Lỗi lấy danh sách danh mục",
-      error: error.message,
+      message: "Internal server error",
+      error: (error as Error).message,
     });
   }
 };
 
-/**
- * Get categories - alias for getAllCategories
- */
-export const getCategories = async (req: Request, res: Response) => {
-  return getAllCategories(req, res);
+export const createCategoryAudiences = async (req: Request, res: Response) => {
+  try {
+    const { categoryId } = req.params;
+    const { audienceIds, sort_order } = req.body; // Expecting an array of audience IDs
+
+    if (!audienceIds || !Array.isArray(audienceIds)) {
+      return res.status(400).json({
+        success: false,
+        message: "audienceIds must be an array",
+      });
+    }
+
+    const result = await CategoryService.addAudiencesToCategory(
+      Number(categoryId),
+      audienceIds.map((id: any) => Number(id)),
+      sort_order
+    );
+    res.status(200).json({
+      success: true,
+      message: "Audiences added to category successfully",
+      data: result,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
 };
 
-/**
- * Get category by slug
- * GET /api/categories/slug/:slug
- */
-export const getCategoryBySlug = async (req: Request, res: Response) => {
+export const createCategoryAttributes = async (req: Request, res: Response) => {
+  try {
+    const { categoryId } = req.params;
+    const { attributeIds } = req.body; // Expecting an array of attribute IDs
+
+    if (!attributeIds || !Array.isArray(attributeIds)) {
+      return res.status(400).json({
+        success: false,
+        message: "attributeIds must be an array",
+      });
+    }
+    const result = await CategoryService.addAttributesToCategory(
+      Number(categoryId),
+      attributeIds.map((id: any) => Number(id))
+    );
+    res.status(200).json({
+      success: true,
+      message: "Attributes added to category successfully",
+      data: result,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getCategoryByAudienceSlug = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const { slug } = req.params;
-
-    const category = await prisma.category.findUnique({
-      where: { slug, isActive: true },
-      include: {
-        parent: {
-          select: { id: true, name: true, slug: true },
-        },
-        children: {
-          where: { isActive: true },
-          orderBy: { sortOrder: "asc" },
-        },
-      },
-    });
-
-    if (!category) {
-      res.status(404).json({
+    if (!slug) {
+      return res.status(400).json({
         success: false,
-        message: "Không tìm thấy danh mục",
+        message: "Slug is required",
       });
-      return;
     }
-
-    res.status(200).json({
+    const category = await CategoryService.getCategoryByAudienceSlug(
+      slug as string
+    );
+    return res.status(200).json({
       success: true,
+      message: "Category fetched successfully",
       data: category,
     });
-  } catch (error: any) {
-    res.status(500).json({
+  } catch (error) {
+    return res.status(500).json({
       success: false,
-      message: "Lỗi lấy thông tin danh mục",
-      error: error.message,
+      message: "Internal server error",
+      error: (error as Error).message,
     });
   }
 };
 
-/**
- * Get category by ID
- * GET /api/categories/:id
- */
-export const getCategoryById = async (req: Request, res: Response) => {
+export const getCategoryAttributes = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-
-    const category = await prisma.category.findUnique({
-      where: {
-        id: Number(id),
-        isActive: true,
-      },
-      include: {
-        parent: {
-          select: { id: true, name: true, slug: true },
-        },
-        children: {
-          where: { isActive: true },
-          orderBy: { sortOrder: "asc" },
-        },
-      },
-    });
-
-    if (!category) {
-      res.status(404).json({
-        success: false,
-        message: "Không tìm thấy danh mục",
-      });
-      return;
-    }
-
-    res.status(200).json({
+    const { categoryId } = req.params;
+    const attributes = await CategoryService.getCategoryAttributes(
+      Number(categoryId)
+    );
+    return res.status(200).json({
       success: true,
-      data: category,
+      message: "Category attributes fetched successfully",
+      data: attributes,
     });
-  } catch (error: any) {
-    res.status(500).json({
+  } catch (error) {
+    return res.status(500).json({
       success: false,
-      message: "Lỗi lấy thông tin danh mục",
-      error: error.message,
+      message: "Internal server error",
+      error: (error as Error).message,
     });
   }
-};
-
-export const getCategory = async (req: Request, res: Response) => {
-  return getCategoryById(req, res);
-};
-
-export const createCategory = async (req: Request, res: Response) => {
-  res.status(501).json({
-    success: false,
-    message: "Create category not implemented yet",
-  });
-};
-
-export const updateCategory = async (req: Request, res: Response) => {
-  res.status(501).json({
-    success: false,
-    message: "Update category not implemented yet",
-  });
-};
-
-export const deleteCategory = async (req: Request, res: Response) => {
-  res.status(501).json({
-    success: false,
-    message: "Delete category not implemented yet",
-  });
 };
