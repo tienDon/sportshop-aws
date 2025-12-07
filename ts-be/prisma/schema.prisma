@@ -48,8 +48,7 @@ model Color {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  variants           ProductVariant[]
-  productColorImages ProductColorImage[] // Cho phép truy vấn tất cả Product đang dùng màu này để hiển thị ảnh
+  variants ProductVariant[]
 }
 
 enum SizeChartType {
@@ -155,7 +154,7 @@ model Product {
   productAudiences       ProductAudience[]
   cartItems              CartItem[]
   orderItems             OrderItem[]
-  productColorImages     ProductColorImage[] // Cho phép truy vấn tất cả ảnh theo màu của sản phẩm
+  // productColorImages     ProductColorImage[] // Cho phép truy vấn tất cả ảnh theo màu của sản phẩm
 }
 
 model ProductSport {
@@ -230,7 +229,7 @@ model ProductVariant {
   price         Decimal? @db.Decimal(10, 2) // Override base price
   stockQuantity Int      @default(0)
   sku           String?
-  // imageUrl ĐÃ ĐƯỢC LOẠI BỎ khỏi đây
+  imageUrls     Json? // Lưu mảng URL ảnh: ["url1", "url2"]
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   color   Color   @relation(fields: [colorId], references: [id])
@@ -242,20 +241,20 @@ model ProductVariant {
   @@unique([productId, colorId, sizeId])
 }
 
-model ProductColorImage {
-  id        Int     @id @default(autoincrement())
-  productId Int // <--- Lấy ID của Product
-  colorId   Int // <--- Lấy ID của Color (cùng với Product ID định nghĩa Gallery)
-  url       String  @db.VarChar(500)
-  sortOrder Int     @default(0)
-  isCover   Boolean @default(false)
+// model ProductColorImage {
+//   id        Int     @id @default(autoincrement())
+//   variantId Int // <--- Lấy ID của ProductVariant
+//   colorId   Int // <--- Lấy ID của Color (cùng với Product ID định nghĩa Gallery)
+//   url       String  @db.VarChar(500)
+//   sortOrder Int     @default(0)
+//   isCover   Boolean @default(false)
 
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  color   Color   @relation(fields: [colorId], references: [id])
+//   // productVariant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+//   // color   Color   @relation(fields: [colorId], references: [id])
 
-  // Gallery ảnh được định nghĩa bởi tổ hợp Product + Color
-  @@unique([productId, colorId, url])
-}
+//   // Gallery ảnh được định nghĩa bởi tổ hợp Product + Color
+//   // @@unique([variantId, colorId, url])
+// }
 
 enum Role {
   ADMIN

@@ -64,13 +64,14 @@ const ProductCard = ({
 
   const formatPrice = (price: string | number | undefined) => {
     if (price === undefined || price === null) return "";
-    if (typeof price === "number") {
+    const numericPrice = Number(price);
+    if (!isNaN(numericPrice)) {
       return new Intl.NumberFormat("vi-VN", {
         style: "currency",
         currency: "VND",
-      }).format(price);
+      }).format(numericPrice);
     }
-    return price;
+    return price.toString();
   };
 
   const CardContent = (

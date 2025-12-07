@@ -75,7 +75,7 @@ const ProductListing = ({
       <div className="py-6">
         <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
         <p className="text-gray-600 mt-2">
-          {data?.pagination?.totalItems || 0} sản phẩm
+          {data?.pagination?.total || 0} sản phẩm
         </p>
       </div>
 
@@ -116,20 +116,20 @@ const ProductListing = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
-              {data?.data?.map((product) => (
+              {data?.data?.map((product, index) => (
                 <ProductCard
-                  key={product._id}
+                  key={product.id || index}
                   name={product.name}
                   slug={product.slug}
                   image={
-                    product.main_image_url ||
+                    product.mainImageUrl ||
                     "https://placehold.co/600x600?text=No+Image"
                   }
-                  originalPrice={product.base_price}
+                  originalPrice={product.basePrice}
                   salePrice={undefined}
                   badge={product.badge}
                   rating={0}
-                  brand={product.brand?.name || ""}
+                  brand={product.brandName || ""}
                   colors={product.colors}
                   breadcrumb={breadcrumbItems} // Truyền breadcrumb xuống
                 />

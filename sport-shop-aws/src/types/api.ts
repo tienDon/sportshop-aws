@@ -120,17 +120,15 @@ export interface ProductBadge {
 }
 
 export interface ProductSummary {
-  _id: string;
+  id: number;
   name: string;
   slug: string;
-  base_price: number;
-  brand: {
-    _id: string;
-    name: string;
-  };
-  main_image_url: string | null;
-  badge?: ProductBadge;
+  basePrice: string | number;
+  brandName?: string;
+  mainImageUrl: string | null;
+  badgeId?: number | null;
   colors?: string[];
+  badge?: ProductBadge; // Giữ lại nếu cần map thêm ở frontend hoặc backend trả về object badge
 }
 
 // Navigation Types
@@ -155,3 +153,33 @@ export interface NavigationRoot {
 }
 
 export type NavigationStructure = NavigationRoot[];
+
+export interface ProductDetailResponse {
+  id: number;
+  name: string;
+  slug: string;
+  brandName: string;
+  basePrice: string;
+  description: string | null;
+  specifications: string | null;
+  note: string | null;
+  colors: {
+    id: number;
+    name: string;
+    hexCode: string;
+  }[];
+  sizes: string[];
+  attributes: {
+    name: string;
+    value: string[];
+  }[];
+  variants: {
+    id: number;
+    sku: string;
+    price: string;
+    stockQuantity: number;
+    colorId: number;
+    sizeName: string;
+    imageUrls: string[];
+  }[];
+}

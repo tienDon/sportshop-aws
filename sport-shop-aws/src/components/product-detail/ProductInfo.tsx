@@ -5,7 +5,6 @@ import {
   Plus,
   RefreshCw,
   ShieldCheck,
-  ShoppingCart,
   ShoppingCartIcon,
   Truck,
 } from "lucide-react";
@@ -20,8 +19,8 @@ const ProductInfo = ({
   options,
   selectedColorId,
   setSelectedColorId,
-  selectedSizeId,
-  setSelectedSizeId,
+  selectedSize,
+  setSelectedSize,
   isSizeAvailable,
   isColorAvailable,
   displayPrice,
@@ -29,15 +28,20 @@ const ProductInfo = ({
   handleQuantityChange,
   currentStock,
   isOutOfStock,
+  currentVariant,
 }: ProductInfoProps) => {
   if (!product) return null;
+
+  const selectedColorName =
+    options.colors.find((c) => c.id === selectedColorId)?.name ||
+    "Đang cập nhật";
 
   return (
     <div className="flex flex-col gap-6">
       {/* Header Info */}
       <div className="space-y-2">
         <h2 className="text-sm font-medium text-gray-500 tracking-wide uppercase">
-          {product.brand.name}
+          {product.brandName}
         </h2>
         <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
           {product.name}
@@ -46,17 +50,7 @@ const ProductInfo = ({
         <div className="flex items-center gap-4 text-sm text-gray-600">
           <div className="flex items-center gap-1">
             <span className="font-medium text-black">SKU:</span>
-            <span>{product.variants[0]?.sku || "N/A"}</span>
-          </div>
-          <div className="h-4 w-px bg-gray-300"></div>
-          <div className="flex items-center gap-1">
-            <span className="font-medium text-black">Danh mục:</span>
-            <span className="text-blue-600 hover:underline cursor-pointer">
-              {product.category_ids
-                .filter((p) => p.is_primary)
-                .map((p) => p._id.name)
-                .join(", ")}
-            </span>
+            <span>{currentVariant?.sku || "N/A"}</span>
           </div>
         </div>
       </div>
@@ -66,36 +60,60 @@ const ProductInfo = ({
         <p className="text-3xl font-bold text-red-600">
           {formatCurrency(displayPrice)}
         </p>
-        {product.base_price > displayPrice && (
+        {Number(product.basePrice) > displayPrice && (
           <p className="text-lg text-gray-400 line-through mb-1">
-            {formatCurrency(product.base_price)}
+            {formatCurrency(Number(product.basePrice))}
           </p>
         )}
       </div>
 
       <div className="h-px bg-gray-200" />
 
-      <p>
-        Màu sắc:{" "}
-        {product.variants[0]?.color.name.toUpperCase() || "Đang cập nhật"}
-      </p>
+      {/* Colors */}
+      <div>
+        <p className="mb-2">
+          Màu sắc:{" "}
+          <span className="font-medium uppercase">{selectedColorName}</span>
+        </p>
+        <div className="flex items-center gap-3">
+          {options.colors.map((color) => {
+            // Find a representative image for this color
+            const variantWithColor = product.variants.find(
+              (v) => v.colorId === color.id
+            );
+            const imageUrl = variantWithColor?.imageUrls[0];
 
-      <div className="flex items-center gap-3 mt-2">
-        {product.images.map((img) => (
-          <button
-            className={cn(
-              "w-20 ",
-              selectedColorId === img.image_id && "ring-2 ring-red-500"
-            )}
-            key={img.image_id}
-            onClick={() => setSelectedColorId(img.image_id)}
-          >
-            <img src={img.url} />
-          </button>
-        ))}
+            return (
+              <button
+                className={cn(
+                  "w-16 h-16 border rounded p-1 overflow-hidden",
+                  selectedColorId === color.id
+                    ? "border-black ring-1 ring-black"
+                    : "border-gray-200 hover:border-gray-400"
+                )}
+                key={color.id}
+                onClick={() => setSelectedColorId(color.id)}
+                title={color.name}
+              >
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={color.name}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div
+                    className="w-full h-full"
+                    style={{ backgroundColor: color.hexCode }}
+                  ></div>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Size Selection */}
+      {/* Sizes */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-900">Kích thước</span>
@@ -105,12 +123,12 @@ const ProductInfo = ({
         </div>
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
           {options.sizes.map((size) => {
-            const isSelected = selectedSizeId === size._id;
-            const isAvailable = isSizeAvailable(size._id);
+            const isSelected = selectedSize === size;
+            const isAvailable = isSizeAvailable(size);
             return (
               <button
-                key={size._id}
-                onClick={() => setSelectedSizeId(size._id)}
+                key={size}
+                onClick={() => setSelectedSize(size)}
                 disabled={!isAvailable}
                 className={cn(
                   "flex items-center justify-center rounded-md border py-2.5 text-sm font-medium transition-all",
@@ -121,7 +139,7 @@ const ProductInfo = ({
                     "opacity-40 cursor-not-allowed bg-gray-50 text-gray-400 hover:border-gray-200 decoration-slice line-through"
                 )}
               >
-                {size.name}
+                {size}
               </button>
             );
           })}

@@ -24,8 +24,7 @@ export class AttributeService {
     const values = await prisma.attributeValue.findMany({
       where: { attributeId },
     });
-    // Chỉ trả về mảng string value
-    return values.map((v) => v.value);
+    return values;
   }
   static async getAttributesWithValues(code?: string) {
     const where = code
@@ -49,7 +48,7 @@ export class AttributeService {
       id: attr.id,
       name: attr.name,
       code: attr.code,
-      values: attr.values.map((val) => val.value),
+      values: attr.values,
     }));
   }
 

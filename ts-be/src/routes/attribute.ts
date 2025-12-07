@@ -18,6 +18,8 @@ router.get("/:attributeId/values", getAttributeValuesByAttributeId);
 router.delete("/:attributeId", deleteAttribute); // TODO: delete attribute
 router.delete("/", deleteAllAttributes); // TODO: delete all attributes
 
+// router.get("/:attributeId/values", getAttributeValuesByAttributeId);
+
 router.get("/with-values", getAttributesWithValues);
 // [
 //   {

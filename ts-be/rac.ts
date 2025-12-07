@@ -1,6 +1,6 @@
 import { prisma } from "./src/lib/prisma.js";
 // import { Prisma, Role, Gender, SizeChartType } from "@prisma/client";
-import { Role, Gender, SizeChartType } from "./generated/prisma/enums";
+import { Role, Gender, SizeChartType } from "./generated/prisma/enums.js";
 import { Prisma } from "./generated/prisma/client.js";
 
 const seedDatabase = async () => {

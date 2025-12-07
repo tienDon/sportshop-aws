@@ -1,21 +1,19 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import ProductsAPI from "@/services/productsApi";
-import type { BackendProduct, Variant, Color, Size } from "@/types/api";
-
-// ... Khai báo các types cần thiết (BackendProduct, Variant, Color, Size) ...
+import type { ProductDetailResponse } from "@/types/api";
 
 export const useProductDetail = (slug?: string) => {
   // --- A. State Fetching Dữ liệu ---
-  const [product, setProduct] = useState<BackendProduct | null>(null);
+  const [product, setProduct] = useState<ProductDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // --- B. State Lựa chọn của Người dùng (Selection State) ---
-  const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
-  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null);
+  const [selectedColorId, setSelectedColorId] = useState<number | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
-  // 1. Logic Fetching Data (Giữ nguyên)
+  // 1. Logic Fetching Data
   useEffect(() => {
     const fetchProduct = async () => {
       if (!slug) {
@@ -24,13 +22,13 @@ export const useProductDetail = (slug?: string) => {
       }
       // Reset trạng thái lựa chọn khi load sản phẩm mới
       setSelectedColorId(null);
-      setSelectedSizeId(null);
+      setSelectedSize(null);
       setQuantity(1);
 
       try {
         setLoading(true);
         setError(null);
-        const data = await ProductsAPI.getProductBySlug(slug);
+        const data = await ProductsAPI.getProductDetailBySlug(slug);
         setProduct(data);
       } catch (err) {
         console.error("Failed to fetch product:", err);
@@ -47,8 +45,8 @@ export const useProductDetail = (slug?: string) => {
   useEffect(() => {
     if (product && product.variants.length > 0 && !selectedColorId) {
       const firstVariant = product.variants[0];
-      setSelectedColorId(firstVariant.color._id);
-      setSelectedSizeId(firstVariant.size._id);
+      setSelectedColorId(firstVariant.colorId);
+      setSelectedSize(firstVariant.sizeName);
     }
   }, [product, selectedColorId]);
 
@@ -56,59 +54,54 @@ export const useProductDetail = (slug?: string) => {
   const options = useMemo(() => {
     if (!product) return { colors: [], sizes: [] };
 
-    const uniqueColors = new Map<string, Color>();
-    const uniqueSizes = new Map<string, Size>();
-
-    product.variants.forEach((v) => {
-      uniqueColors.set(v.color._id, v.color);
-      uniqueSizes.set(v.size._id, v.size);
-    });
-
     return {
-      colors: Array.from(uniqueColors.values()),
-      sizes: Array.from(uniqueSizes.values()),
+      colors: product.colors,
+      sizes: product.sizes,
     };
   }, [product]);
 
   // 4. Tìm Variant đang được chọn (Matching Variant)
   const currentVariant = useMemo(() => {
-    if (!product || !selectedColorId || !selectedSizeId) return null;
+    if (!product || !selectedColorId || !selectedSize) return null;
 
     return (
       product.variants.find(
-        (v) => v.color._id === selectedColorId && v.size._id === selectedSizeId
+        (v) => v.colorId === selectedColorId && v.sizeName === selectedSize
       ) || null
-    ); // Trả về null nếu không tìm thấy kết hợp
-  }, [product, selectedColorId, selectedSizeId]);
+    );
+  }, [product, selectedColorId, selectedSize]);
 
   // 5. Logic Kiểm tra tính khả dụng của một Size khi đã chọn Màu
   const isSizeAvailable = useCallback(
-    (sizeId: string) => {
-      if (!product || !selectedColorId) return true; // Nếu chưa chọn màu, size nào cũng khả dụng (tạm)
+    (sizeName: string) => {
+      if (!product || !selectedColorId) return true;
 
-      // Kiểm tra xem có bất kỳ Variant nào chứa (Màu đang chọn + Size này) không
       return product.variants.some(
-        (v) => v.color._id === selectedColorId && v.size._id === sizeId
+        (v) => v.colorId === selectedColorId && v.sizeName === sizeName
       );
     },
     [product, selectedColorId]
   );
 
-  // 6. Logic Kiểm tra tính khả dụng của một Màu khi đã chọn Size (Thường ít dùng, nhưng nên có)
+  // 6. Logic Kiểm tra tính khả dụng của một Màu khi đã chọn Size
   const isColorAvailable = useCallback(
-    (colorId: string) => {
-      if (!product || !selectedSizeId) return true;
+    (colorId: number) => {
+      if (!product || !selectedSize) return true;
 
       return product.variants.some(
-        (v) => v.color._id === colorId && v.size._id === selectedSizeId
+        (v) => v.colorId === colorId && v.sizeName === selectedSize
       );
     },
-    [product, selectedSizeId]
+    [product, selectedSize]
   );
 
   // 7. Giá, Tồn kho và Trạng thái
-  const displayPrice = currentVariant?.price ?? product?.base_price ?? 0;
-  const currentStock = currentVariant?.stock_quantity ?? 0;
+  const displayPrice = currentVariant
+    ? Number(currentVariant.price)
+    : product
+    ? Number(product.basePrice)
+    : 0;
+  const currentStock = currentVariant?.stockQuantity ?? 0;
   const isOutOfStock = currentStock === 0;
 
   // 8. Handlers
@@ -128,7 +121,7 @@ export const useProductDetail = (slug?: string) => {
     // Selection & Availability
     options,
     selectedColorId,
-    selectedSizeId,
+    selectedSize,
     quantity,
     currentVariant,
 
@@ -139,9 +132,9 @@ export const useProductDetail = (slug?: string) => {
 
     // Actions
     setSelectedColorId,
-    setSelectedSizeId,
+    setSelectedSize,
     handleQuantityChange,
     isSizeAvailable,
-    isColorAvailable, // Thêm hàm kiểm tra khả dụng để disable nút
+    isColorAvailable,
   };
 };

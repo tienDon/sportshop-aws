@@ -1,22 +1,18 @@
 import React, { useState, useEffect } from "react";
-import type { BackendProduct } from "@/types/api";
 import { cn } from "@/lib/utils";
 
 interface ProductGalleryProps {
-  images: BackendProduct["images"];
+  images: string[];
   productName: string;
 }
 
 const ProductGallery = ({ images, productName }: ProductGalleryProps) => {
   // State để quản lý ảnh đang hiển thị
-  const [activeImage, setActiveImage] = useState<string>(
-    images.find((img) => img.is_main)?.url || images[0]?.url
-  );
+  const [activeImage, setActiveImage] = useState<string>(images[0] || "");
 
   // Cập nhật activeImage khi images prop thay đổi (ví dụ chuyển sang sản phẩm khác)
   useEffect(() => {
-    const main = images.find((img) => img.is_main)?.url || images[0]?.url;
-    if (main) setActiveImage(main);
+    if (images.length > 0) setActiveImage(images[0]);
   }, [images]);
 
   return (
@@ -38,20 +34,18 @@ const ProductGallery = ({ images, productName }: ProductGalleryProps) => {
 
       {/* Thumbnails Grid */}
       {/* Hiển thị danh sách ảnh nhỏ bên dưới */}
-      <div className="mx-auto">
+      <div className="mx-auto flex gap-2 overflow-x-auto">
         {images.map((img, idx) => (
           <button
-            key={img.image_id || idx}
-            onClick={() => setActiveImage(img.url)}
-            onMouseEnter={() => setActiveImage(img.url)} // Hover để xem trước nhanh
-            className={"w-25 h-30 "}
+            key={idx}
+            onClick={() => setActiveImage(img)}
+            className={cn(
+              "w-20 h-20 border rounded overflow-hidden flex-shrink-0",
+              activeImage === img ? "border-black" : "border-transparent"
+            )}
             aria-label={`View image ${idx + 1}`}
           >
-            <img
-              src={img.url}
-              alt=""
-              className="w-full h-full object-contain "
-            />
+            <img src={img} alt="" className="w-full h-full object-contain" />
           </button>
         ))}
       </div>
