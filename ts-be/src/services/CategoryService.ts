@@ -47,7 +47,11 @@ export class CategoryService {
     return prisma.category.findUnique({
       where: { id },
       include: {
-        children: true,
+        children: {
+          include: {
+            children: true,
+          },
+        },
       },
     });
   }
@@ -112,15 +116,6 @@ export class CategoryService {
       },
       include: {
         children: {
-          where: {
-            // Filter children cũng phải thuộc audience này (nếu cần thiết logic chặt chẽ)
-            // Hoặc nếu logic là "Cha thuộc Nam thì Con cũng thuộc Nam" thì có thể bỏ where này
-            categoryAudiences: {
-              some: {
-                audienceId: audience.id,
-              },
-            },
-          },
           include: {
             children: true, // Deep nested children...
           },

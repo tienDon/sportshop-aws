@@ -8,6 +8,7 @@ import colorRoutes from "./color.js";
 import sizeRoutes from "./size.js";
 import attributeRoutes from "./attribute.js";
 import audienceRoutes from "./audience.js";
+import navigationRoutes from "./navigation.js";
 
 const router = Router();
 
@@ -18,7 +19,8 @@ router.use("/sports", sportRoutes);
 router.use("/colors", colorRoutes);
 router.use("/sizes", sizeRoutes);
 router.use("/attributes", attributeRoutes);
-router.use("/categories", categoryRoutes);
 router.use("/audiences", audienceRoutes);
+router.use("/categories", categoryRoutes);
+router.use("/navigation", navigationRoutes);
 
 export default router;

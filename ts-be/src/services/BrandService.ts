@@ -63,4 +63,18 @@ export class BrandService {
 
     return newBrand;
   }
+
+  static async getBrandNames() {
+    const brands = await prisma.brand.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    });
+    return brands;
+  }
 }

@@ -1,5 +1,6 @@
 // Định nghĩa một item menu có khả năng đệ quy
 interface NavMenuItem {
+  id: number;
   /** Tên hiển thị của mục menu (Ví dụ: "Nam", "Áo", "Nike") */
   name: string;
 

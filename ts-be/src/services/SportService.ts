@@ -33,4 +33,18 @@ export class SportService {
       },
     });
   }
+
+  static async getSportNames() {
+    const sports = await prisma.sport.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    });
+    return sports;
+  }
 }

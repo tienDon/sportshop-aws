@@ -46,7 +46,23 @@ export const createCategory = async (req: Request, res: Response) => {
     });
   }
 };
-export const getCategoryById = async (req: Request, res: Response) => {};
+export const getCategoryById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const category = await CategoryService.getCategoryById(Number(id));
+    return res.status(200).json({
+      success: true,
+      message: "Category fetched successfully",
+      data: category,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
+};
 
 export const deleteAllCategories = async (req: Request, res: Response) => {
   try {
