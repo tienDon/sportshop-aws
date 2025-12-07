@@ -184,7 +184,11 @@ class ProductService {
     });
   }
 
-  static async addCategoryToProduct(productId: number, categoryId: number) {
+  static async addCategoryToProduct(
+    productId: number,
+    categoryId: number,
+    isPrimary?: boolean
+  ) {
     // Kiểm tra product và category có tồn tại không
     const product = await prisma.product.findUnique({
       where: { id: productId },
@@ -204,6 +208,7 @@ class ProductService {
       data: {
         productId,
         categoryId,
+        isPrimary: isPrimary || false,
       },
     });
 
@@ -477,6 +482,21 @@ class ProductService {
             },
           },
         },
+        productCategories: {
+          include: {
+            category: true,
+          },
+        },
+        productAudiences: {
+          include: {
+            audience: true,
+          },
+        },
+        productSports: {
+          include: {
+            sport: true,
+          },
+        },
       },
     });
 
@@ -535,7 +555,14 @@ class ProductService {
       id: product.id,
       name: product.name,
       slug: product.slug,
-      brandName: product.brand?.name,
+      brand: product.brand
+        ? {
+            id: product.brand.id,
+            name: product.brand.name,
+            slug: product.brand.slug,
+          }
+        : null,
+      brandName: product.brand?.name, // Keep for backward compatibility if needed
       basePrice: product.basePrice,
       description: product.description,
       specifications: product.specifications,
@@ -544,6 +571,21 @@ class ProductService {
       sizes,
       attributes,
       variants,
+      categories: product.productCategories.map((pc) => ({
+        id: pc.category.id,
+        name: pc.category.name,
+        slug: pc.category.slug,
+      })),
+      audiences: product.productAudiences.map((pa) => ({
+        id: pa.audience.id,
+        name: pa.audience.name,
+        slug: pa.audience.slug,
+      })),
+      sports: product.productSports.map((ps) => ({
+        id: ps.sport.id,
+        name: ps.sport.name,
+        slug: ps.sport.slug,
+      })),
     };
   }
 }

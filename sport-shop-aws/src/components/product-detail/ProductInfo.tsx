@@ -178,20 +178,20 @@ const ProductInfo = ({
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             disabled={isOutOfStock}
-            className="flex-1 bg-black text-white h-12 rounded-md font-bold hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wide"
+            className="flex-1 bg-black text-white h-12 rounded-md font-bold  transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wide hover:text-red-600"
           >
             <ShoppingCartIcon className="w-5 h-5" />
             Thêm vào giỏ
           </button>
           <button
             disabled={isOutOfStock}
-            className="flex-1 border-2 border-black text-black h-12 rounded-md font-bold hover:bg-gray-50 transition-colors disabled:border-gray-300 disabled:text-gray-300 disabled:cursor-not-allowed uppercase tracking-wide"
+            className="flex-1 border-2 border-black text-black h-12 rounded-md font-bold hover:text-red-500 transition-colors disabled:border-gray-300 disabled:text-gray-300 disabled:cursor-not-allowed uppercase tracking-wide"
           >
             Mua ngay
           </button>
-          <button className="h-12 w-12 border border-gray-200 rounded-md flex items-center justify-center hover:bg-gray-50 hover:text-red-500 transition-colors">
+          {/* <button className="h-12 w-12 border border-gray-200 rounded-md flex items-center justify-center hover:bg-gray-50 hover:text-red-500 transition-colors">
             <Heart className="w-6 h-6" />
-          </button>
+          </button> */}
         </div>
       </div>
 

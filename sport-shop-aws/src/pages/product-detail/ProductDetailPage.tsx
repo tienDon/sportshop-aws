@@ -6,6 +6,7 @@ import Breadcrumb from "@/components/ui/Breadcrumb";
 import { useProductDetail } from "@/hooks/useProductDetail";
 import { getBreadcrumb } from "@/utils/breadCrumbUtils";
 import ProductDetail from "@/components/product-detail/ProductDetail";
+import RelatedProducts from "@/components/product-detail/RelatedProducts";
 
 const ProductDetailPage = () => {
   const { slug } = useParams();
@@ -52,6 +53,9 @@ const ProductDetailPage = () => {
 
         {/* Product Detail Content */}
         <ProductDetail {...productDetailData} />
+
+        {/* Related Products */}
+        {product && <RelatedProducts product={product} />}
       </Container>
     </div>
   );

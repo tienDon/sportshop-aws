@@ -9,6 +9,7 @@ import sizeRoutes from "./size.js";
 import attributeRoutes from "./attribute.js";
 import audienceRoutes from "./audience.js";
 import navigationRoutes from "./navigation.js";
+import cartRoutes from "./cart.js";
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use("/attributes", attributeRoutes);
 router.use("/audiences", audienceRoutes);
 router.use("/categories", categoryRoutes);
 router.use("/navigation", navigationRoutes);
+router.use("/cart", cartRoutes);
 
 export default router;

@@ -95,7 +95,7 @@ export const createProductAudience = async (req: Request, res: Response) => {
 export const createProductCategory = async (req: Request, res: Response) => {
   try {
     const productId = req.params.id;
-    const { categoryId } = req.body;
+    const { categoryId, isPrimary } = req.body;
     if (!categoryId) {
       return res.status(400).json({
         success: false,
@@ -104,7 +104,8 @@ export const createProductCategory = async (req: Request, res: Response) => {
     }
     const prodcuct = await ProductService.addCategoryToProduct(
       Number(productId),
-      Number(categoryId)
+      Number(categoryId),
+      Boolean(isPrimary)
     );
     res.status(200).json({
       success: true,

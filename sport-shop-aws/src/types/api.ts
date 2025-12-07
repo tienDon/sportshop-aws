@@ -159,6 +159,11 @@ export interface ProductDetailResponse {
   name: string;
   slug: string;
   brandName: string;
+  brand: {
+    id: number;
+    name: string;
+    slug: string;
+  } | null;
   basePrice: string;
   description: string | null;
   specifications: string | null;
@@ -181,5 +186,20 @@ export interface ProductDetailResponse {
     colorId: number;
     sizeName: string;
     imageUrls: string[];
+  }[];
+  categories: {
+    id: number;
+    name: string;
+    slug: string;
+  }[];
+  audiences: {
+    id: number;
+    name: string;
+    slug: string;
+  }[];
+  sports: {
+    id: number;
+    name: string;
+    slug: string;
   }[];
 }
