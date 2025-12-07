@@ -204,14 +204,14 @@ class AuthService {
         },
       });
 
-      // Update last login
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          lastLoginAt: new Date(),
-          loginCount: { increment: 1 },
-        },
-      });
+      // // Update last login
+      // await prisma.user.update({
+      //   where: { id: user.id },
+      //   data: {
+      //     lastLoginAt: new Date(),
+      //     loginCount: { increment: 1 },
+      //   },
+      // });
 
       return {
         success: true,
@@ -220,7 +220,7 @@ class AuthService {
         refreshToken: tokens.refreshToken,
         user: {
           id: user.id,
-          name: user.name,
+          full_name: user.full_name,
           email: user.email,
           role: user.role,
           avatar: user.avatar,
@@ -350,7 +350,7 @@ class AuthService {
         where: { id: userId },
         select: {
           id: true,
-          name: true,
+          full_name: true,
           email: true,
           phone: true,
           role: true,

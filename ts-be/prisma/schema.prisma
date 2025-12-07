@@ -267,55 +267,11 @@ enum Gender {
   OTHER
 }
 
-enum AddressType {
-  HOME
-  WORK
-  OTHER
-}
-
-model User {
-  id          Int       @id @default(autoincrement())
-  email       String    @unique
-  password    String
-  name        String
-  phone       String?
-  avatar      String?
-  dateOfBirth DateTime?
-  gender      Gender?
-  isActive    Boolean   @default(true)
-  role        Role      @default(CUSTOMER)
-  lastLoginAt DateTime?
-  loginCount  Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  addresses Address[]
-  cart      Cart?
-  orders    Order[]
-  sessions  Session[]
-  otps      OTP[]
-}
-
-model Address {
-  id            Int         @id @default(autoincrement())
-  userId        Int
-  recipientName String
-  phone         String
-  street        String
-  city          String
-  district      String
-  ward          String
-  postalCode    String?
-  isDefault     Boolean     @default(false)
-  isBilling     Boolean     @default(false)
-  type          AddressType @default(HOME)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
+// enum AddressType {
+//   HOME
+//   WORK
+//   OTHER
+// }
 
 model Badge {
   id           Int      @id @default(autoincrement())
@@ -367,92 +323,12 @@ model CollectionProduct {
   @@id([collectionId, productId])
 }
 
-model Cart {
-  id        Int      @id @default(autoincrement())
-  userId    Int?     @unique
-  // sessionId  String?  @unique
-  // couponCode String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user  User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items CartItem[]
-}
-
-model CartItem {
-  id         Int     @id @default(autoincrement())
-  cartId     Int
-  productId  Int
-  variantId  Int
-  quantity   Int
-  isSelected Boolean @default(true)
-
-  cart    Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product Product        @relation(fields: [productId], references: [id])
-  variant ProductVariant @relation(fields: [variantId], references: [id])
-  @@unique([cartId, variantId])
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  SHIPPING
-  DELIVERED
-  CANCELLED
-  RETURNED
-}
-
 enum PaymentMethod {
   COD
   BANK_TRANSFER
   CREDIT_CARD
   MOMO
   ZALOPAY
-}
-
-model Order {
-  id                  Int           @id @default(autoincrement())
-  userId              Int
-  orderDate           DateTime      @default(now())
-  status              OrderStatus   @default(PENDING)
-  paymentMethod       PaymentMethod
-  couponCodeApplied   String?
-  totalGrossAmount    Decimal       @db.Decimal(12, 2)
-  totalDiscountAmount Decimal       @default(0) @db.Decimal(12, 2)
-  totalFinalAmount    Decimal       @db.Decimal(12, 2)
-
-  // Shipping Address Snapshot
-  shippingName    String
-  shippingPhone   String
-  shippingStreet  String
-  shippingWard    String
-  shippingCity    String
-  shippingCountry String @default("Vietnam")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user  User        @relation(fields: [userId], references: [id])
-  items OrderItem[]
-}
-
-model OrderItem {
-  id        Int     @id @default(autoincrement())
-  orderId   Int
-  productId Int
-  variantId Int
-  quantity  Int
-  price     Decimal @db.Decimal(10, 2) // Price at time of order
-
-  // Snapshots
-  productNameSnapshot  String
-  variantSkuSnapshot   String
-  variantColorSnapshot String
-  variantSizeSnapshot  String
-
-  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product        @relation(fields: [productId], references: [id])
-  variant ProductVariant @relation(fields: [variantId], references: [id])
 }
 
 enum PromotionDiscountType {
@@ -499,4 +375,130 @@ model Session {
   updatedAt    DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  full_name     String
+  phone         String?
+  // role          String?
+  avatar        String?
+  date_of_birth DateTime?
+  gender        Gender?
+  isActive      Boolean   @default(true)
+  role          Role      @default(CUSTOMER)
+  // lastLoginAt DateTime?
+  // loginCount  Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  userAddresses UserAddress[]
+  UserPhones    UserPhone[]
+  cart          Cart?
+  orders        Order[]
+  sessions      Session[]
+  otps          OTP[]
+}
+
+model UserAddress {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  address_detail String
+  is_default     Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model UserPhone {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  phone_number String   @unique 
+  is_default   Boolean  @default(false)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Cart {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @unique
+  // sessionId  String?  @unique
+  // couponCode String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+}
+
+model CartItem {
+  id         Int     @id @default(autoincrement())
+  cartId     Int
+  productId  Int
+  variantId  Int
+  quantity   Int
+  isSelected Boolean @default(true)
+
+  cart    Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@unique([cartId, variantId])
+}
+
+enum OrderStatus {
+  CONFIRMED
+  SHIPPING
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+model Order {
+  id                      Int         @id @default(autoincrement())
+  userId                  Int
+  orderCode               String      @unique //#ORD12345
+  totalFinalAmount        Decimal     @db.Decimal(12, 2)
+  orderDate               DateTime    @default(now())
+  status                  OrderStatus @default(CONFIRMED)
+  paymentMethod           String      @default("COD")
+  receiverNameSnapshot    String
+  receiverPhoneSnapshot   String
+  shippingAddressSnapshot String
+  note                    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  variantId Int
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2) // Giá tại thời điểm đặt hàng
+
+  // --- SNAPSHOTS (Bản ghi tĩnh) ---
+  productNameSnapshot  String
+  variantSkuSnapshot   String
+  variantColorSnapshot String
+  variantSizeSnapshot  String // Tên size (ví dụ: "M", "L")
+
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@unique([orderId, variantId])
 }

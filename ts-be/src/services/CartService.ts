@@ -42,7 +42,7 @@ export class CartService {
       return {
         itemId: item.id,
         quantity: item.quantity,
-        isSelected: item.isSelected,
+        isSelected: item.isSelected ?? true,
         product: {
           name: item.product.name,
           slug: item.product.slug,

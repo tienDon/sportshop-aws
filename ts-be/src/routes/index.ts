@@ -10,6 +10,8 @@ import attributeRoutes from "./attribute.js";
 import audienceRoutes from "./audience.js";
 import navigationRoutes from "./navigation.js";
 import cartRoutes from "./cart.js";
+import orderRoutes from "./order.js";
+import userRoutes from "./user.js";
 
 const router = Router();
 
@@ -24,5 +26,7 @@ router.use("/audiences", audienceRoutes);
 router.use("/categories", categoryRoutes);
 router.use("/navigation", navigationRoutes);
 router.use("/cart", cartRoutes);
+router.use("/orders", orderRoutes);
+router.use("/user", userRoutes); // Assuming user-related routes are in auth.js
 
 export default router;

@@ -39,7 +39,7 @@ export const authenticateToken = async (
     // Gắn thông tin user vào request
     req.user = {
       userId: user.id,
-      name: user.name,
+      full_name: user.full_name,
       role: user.role,
     };
 

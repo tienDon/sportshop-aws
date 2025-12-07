@@ -26,7 +26,7 @@ export interface PaginatedResponse<T> {
 // Auth types
 export interface AuthUser {
   userId: number;
-  name: string;
+  full_name: string;
   role: Role;
 }
 

@@ -68,9 +68,10 @@ export const cartApi = {
   },
 
   getCartCount: async () => {
-    const response = await api.get<{ success: boolean; data: { count: number } }>(
-      "/api/cart/items/count"
-    );
+    const response = await api.get<{
+      success: boolean;
+      data: { count: number };
+    }>("/api/cart/items/count");
     return response.data;
   },
 };

@@ -12,8 +12,14 @@ import { useCartStore } from "@/store/useCartStore";
 import { formatCurrency } from "@/lib/utils";
 
 const CartSheet = () => {
-  const { cart, fetchCart, removeItem, updateQuantity, isLoading } =
-    useCartStore();
+  const {
+    cart,
+    fetchCart,
+    removeItem,
+    updateQuantity,
+    isLoading,
+    updatingItems,
+  } = useCartStore();
 
   useEffect(() => {
     fetchCart();
@@ -21,6 +27,8 @@ const CartSheet = () => {
 
   const totalItems = cart?.totalItems || 0;
   const totalPrice = Number(cart?.totalPrice || 0);
+
+  const isUpdating = (itemId: number) => updatingItems.includes(itemId);
 
   return (
     <Sheet>
@@ -86,19 +94,26 @@ const CartSheet = () => {
                           onClick={() =>
                             updateQuantity(item.itemId, item.quantity - 1)
                           }
-                          className="px-2 h-full hover:bg-gray-100 disabled:opacity-50"
-                          disabled={item.quantity <= 1}
+                          className="px-2 h-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={
+                            item.quantity <= 1 || isUpdating(item.itemId)
+                          }
                         >
                           <Minus className="w-3 h-3" />
                         </button>
                         <span className="w-8 text-center text-sm font-medium">
-                          {item.quantity}
+                          {isUpdating(item.itemId) ? (
+                            <span className="inline-block w-3 h-3 border-2 border-gray-300 border-t-black rounded-full animate-spin"></span>
+                          ) : (
+                            item.quantity
+                          )}
                         </span>
                         <button
                           onClick={() =>
                             updateQuantity(item.itemId, item.quantity + 1)
                           }
-                          className="px-2 h-full hover:bg-gray-100"
+                          className="px-2 h-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={isUpdating(item.itemId)}
                         >
                           <Plus className="w-3 h-3" />
                         </button>
@@ -106,7 +121,8 @@ const CartSheet = () => {
 
                       <button
                         onClick={() => removeItem(item.itemId)}
-                        className="text-sm text-red-500 underline hover:text-red-700"
+                        className="text-sm text-red-500 underline hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isUpdating(item.itemId)}
                       >
                         Xóa
                       </button>
