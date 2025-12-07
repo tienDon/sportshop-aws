@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import type { useProductDetail } from "@/hooks/useProductDetail";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useCartStore } from "@/store/useCartStore";
+import { toast } from "sonner";
 
 // Sử dụng ReturnType của hook để đảm bảo props đồng bộ
 type ProductInfoProps = ReturnType<typeof useProductDetail>;
@@ -30,11 +32,21 @@ const ProductInfo = ({
   isOutOfStock,
   currentVariant,
 }: ProductInfoProps) => {
+  const { addToCart, isAdding } = useCartStore();
+
   if (!product) return null;
 
   const selectedColorName =
     options.colors.find((c) => c.id === selectedColorId)?.name ||
     "Đang cập nhật";
+
+  const handleAddToCart = async () => {
+    if (!currentVariant) {
+      toast.error("Vui lòng chọn màu sắc và kích thước");
+      return;
+    }
+    await addToCart(currentVariant.id, quantity);
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -177,11 +189,16 @@ const ProductInfo = ({
 
         <div className="flex flex-col sm:flex-row gap-3">
           <button
-            disabled={isOutOfStock}
+            onClick={handleAddToCart}
+            disabled={isOutOfStock || isAdding}
             className="flex-1 bg-black text-white h-12 rounded-md font-bold  transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wide hover:text-red-600"
           >
-            <ShoppingCartIcon className="w-5 h-5" />
-            Thêm vào giỏ
+            {isAdding ? (
+              <RefreshCw className="w-5 h-5 animate-spin" />
+            ) : (
+              <ShoppingCartIcon className="w-5 h-5" />
+            )}
+            {isAdding ? "Đang thêm..." : "Thêm vào giỏ"}
           </button>
           <button
             disabled={isOutOfStock}

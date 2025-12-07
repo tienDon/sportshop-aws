@@ -390,8 +390,6 @@ model CartItem {
   cart    Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product Product        @relation(fields: [productId], references: [id])
   variant ProductVariant @relation(fields: [variantId], references: [id])
-
-  // THÊM: Đảm bảo 1 biến thể chỉ xuất hiện 1 lần trong 1 giỏ hàng
   @@unique([cartId, variantId])
 }
 
