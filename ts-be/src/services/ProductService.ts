@@ -1,252 +1,142 @@
 import { prisma } from "../lib/prisma.js";
-
-// Helper function to slugify string
-const toSlug = (str: string): string => {
-  return str
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[đĐ]/g, "d")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-");
-};
-
-interface QueryParams {
-  gender_slug?: string;
-  gender_id?: string;
-  category_slug?: string;
-  sport_slug?: string;
-  brand_slug?: string;
-  badge_slug?: string;
-  page?: string | number;
-  limit?: string | number;
-  sort_by?: string;
-}
+import { Product } from "generated/prisma/client.js";
 
 class ProductService {
-  static async getAllProducts(queryParams: QueryParams) {
-    const {
-      gender_slug,
-      gender_id,
-      category_slug,
-      sport_slug,
-      brand_slug,
-      badge_slug,
-      page = 1,
-      limit = 20,
-      sort_by,
-    } = queryParams;
+  static async createProduct(productData: Product) {
+    const newProduct = await prisma.product.create({
+      data: productData,
+    });
+    return newProduct;
+  }
 
-    const pageInt = parseInt(page.toString());
-    const limitInt = parseInt(limit.toString());
-    const skip = (pageInt - 1) * limitInt;
-
-    const where: any = { isActive: true };
-    const include: any = {
-      brand: true,
-      categories: {
-        include: {
-          category: true,
-        },
-      },
-      images: {
-        where: { isActive: true },
-        orderBy: { sortOrder: "asc" },
-      },
-      variants: {
-        where: { isActive: true },
-        include: {
-          attributes: {
-            include: {
-              attribute: true,
-              attributeValue: true,
-            },
-          },
-        },
-      },
-      badges: {
-        where: { isActive: true },
-      },
+  static async getProductsByQuery(filters: any, pagination: any) {
+    const whereClause: any = {
+      isActive: true, // Mặc định chỉ lấy sản phẩm đang active
     };
 
-    // A. Gender filter
-    if (gender_slug || gender_id) {
-      // For now, we'll implement a simpler version
-      // In a full implementation, you'd need to handle attribute-based filtering
-      console.log("Gender filtering not fully implemented yet");
-    }
-
-    // B. Category filter
-    if (category_slug) {
-      const category = await prisma.category.findUnique({
-        where: { slug: category_slug },
-        select: { id: true },
-      });
-
-      if (category) {
-        // Get all descendant categories
-        const categoryIds = await this.getDescendantCategoryIds(category.id);
-        where.categories = {
-          some: {
-            categoryId: { in: categoryIds },
-          },
-        };
-      }
-    }
-
-    // C. Brand filter
-    if (brand_slug) {
-      const brand = await prisma.brand.findUnique({
-        where: { slug: brand_slug },
-        select: { id: true },
-      });
-
-      if (brand) {
-        where.brandId = brand.id;
-      }
-    }
-
-    // D. Badge filter
-    if (badge_slug) {
-      where.badges = {
+    // 1. Lọc theo Category Slug (Thông qua bảng trung gian ProductCategory)
+    if (filters.category_slug) {
+      whereClause.productCategories = {
         some: {
-          slug: badge_slug,
+          category: {
+            slug: filters.category_slug,
+          },
         },
       };
     }
 
-    // E. Sorting
-    let orderBy: any = { createdAt: "desc" };
+    // 2. Lọc theo Audience/Gender Slug (Thông qua bảng trung gian ProductAudience)
+    if (filters.gender_slug) {
+      whereClause.productAudiences = {
+        some: {
+          audience: {
+            slug: filters.gender_slug,
+          },
+        },
+      };
+    }
 
-    if (sort_by) {
-      switch (sort_by) {
-        case "price_asc":
-          orderBy = { price: "asc" };
-          break;
-        case "price_desc":
-          orderBy = { price: "desc" };
-          break;
-        case "name_asc":
-          orderBy = { name: "asc" };
-          break;
-        case "name_desc":
-          orderBy = { name: "desc" };
-          break;
-        case "newest":
-          orderBy = { createdAt: "desc" };
-          break;
-        case "oldest":
-          orderBy = { createdAt: "asc" };
-          break;
-        default:
-          orderBy = { createdAt: "desc" };
+    // 2.1 Lọc theo Brand Slug
+    if (filters.brand_slug) {
+      whereClause.brand = {
+        slug: filters.brand_slug,
+      };
+    }
+
+    // 2.2 Lọc theo Sport Slug
+    if (filters.sport_slug) {
+      whereClause.productSports = {
+        some: {
+          sport: {
+            slug: filters.sport_slug,
+          },
+        },
+      };
+    }
+
+    // 3. Tìm kiếm theo tên
+    if (filters.q) {
+      whereClause.name = {
+        contains: filters.q,
+        // mode: 'insensitive', // MySQL mặc định thường không phân biệt hoa thường, nếu dùng Postgres thì cần dòng này
+      };
+    }
+
+    // 4. Lọc theo khoảng giá (basePrice)
+    if (filters.min_price || filters.max_price) {
+      whereClause.basePrice = {};
+      if (filters.min_price) {
+        whereClause.basePrice.gte = Number(filters.min_price);
+      }
+      if (filters.max_price) {
+        whereClause.basePrice.lte = Number(filters.max_price);
       }
     }
 
-    // Execute queries
+    // 5. Query Database với Select (Chỉ lấy trường cần thiết)
+    const limit = Number(pagination.limit) || 16;
+    const page = Number(pagination.page) || 1;
+    const skip = (page - 1) * limit;
+
     const [products, total] = await Promise.all([
       prisma.product.findMany({
-        where,
-        include,
-        skip,
-        take: limitInt,
-        orderBy,
+        where: whereClause,
+        take: limit,
+        skip: skip,
+        orderBy: {
+          createdAt: "desc", // Mặc định mới nhất trước
+        },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          mainImageUrl: true,
+          basePrice: true,
+          badgeId: true,
+          // Lấy tên Brand
+          brand: {
+            select: {
+              name: true,
+            },
+          },
+          // Lấy danh sách màu từ Variants (Distinct để không trùng)
+          variants: {
+            select: {
+              color: {
+                select: {
+                  name: true,
+                  hexCode: true,
+                },
+              },
+            },
+            distinct: ["colorId"], // Chỉ lấy các màu duy nhất
+          },
+        },
       }),
-      prisma.product.count({ where }),
+      prisma.product.count({ where: whereClause }),
     ]);
 
-    const totalPages = Math.ceil(total / limitInt);
+    // 6. Transform dữ liệu cho đẹp (Flatten structure)
+    const transformedProducts = products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      mainImageUrl: p.mainImageUrl,
+      basePrice: p.basePrice,
+      badgeId: p.badgeId,
+      brandName: p.brand?.name, // Làm phẳng brand name
+      colors: p.variants.map((v) => v.color.hexCode), // Chỉ lấy mảng hexCode: ["#FFF", "#000"]
+    }));
 
     return {
-      data: products,
+      products: transformedProducts,
       pagination: {
-        page: pageInt,
-        limit: limitInt,
         total,
-        totalPages,
-        hasNext: pageInt < totalPages,
-        hasPrev: pageInt > 1,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
     };
-  }
-
-  static async getProductBySlug(slug: string) {
-    const product = await prisma.product.findUnique({
-      where: {
-        slug,
-        isActive: true,
-      },
-      include: {
-        brand: true,
-        categories: {
-          include: {
-            category: {
-              include: {
-                parent: true,
-              },
-            },
-          },
-        },
-        images: {
-          where: { isActive: true },
-          orderBy: { sortOrder: "asc" },
-        },
-        variants: {
-          where: { isActive: true },
-          include: {
-            attributes: {
-              include: {
-                attribute: true,
-                attributeValue: true,
-              },
-            },
-          },
-        },
-        badges: {
-          where: { isActive: true },
-        },
-        // reviews: {
-        //   where: { isActive: true },
-        //   include: {
-        //     user: {
-        //       select: { id: true, name: true, avatar: true },
-        //     },
-        //   },
-        //   orderBy: { createdAt: "desc" },
-        //   take: 10,
-        // },
-      },
-    });
-
-    if (!product) {
-      throw new Error("PRODUCT_NOT_FOUND");
-    }
-
-    return product;
-  }
-
-  // Helper method to get all descendant category IDs
-  private static async getDescendantCategoryIds(
-    parentId: number
-  ): Promise<number[]> {
-    const ids = [parentId];
-    const queue = [parentId];
-
-    while (queue.length > 0) {
-      const currentParentId = queue.shift()!;
-      const children = await prisma.category.findMany({
-        where: { parentId: currentParentId },
-        select: { id: true },
-      });
-
-      for (const child of children) {
-        ids.push(child.id);
-        queue.push(child.id);
-      }
-    }
-
-    return ids;
   }
 }
 
