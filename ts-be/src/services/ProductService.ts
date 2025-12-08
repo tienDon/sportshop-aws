@@ -163,25 +163,35 @@ class ProductService {
       throw new Error("Audience not found");
     }
 
-    // Thêm audience vào product
-    await prisma.productAudience.create({
-      data: {
-        productId,
-        audienceId,
-      },
-    });
-
-    // Trả về product đã được cập nhật
-    return await prisma.product.findUnique({
-      where: { id: productId },
-      include: {
-        productAudiences: {
-          include: {
-            audience: true,
-          },
+    // Kiểm tra xem đã tồn tại chưa
+    const existingRelation = await prisma.productAudience.findUnique({
+      where: {
+        productId_audienceId: {
+          productId,
+          audienceId,
         },
       },
     });
+
+    // Nếu chưa tồn tại thì thêm mới
+    if (!existingRelation) {
+      await prisma.productAudience.create({
+        data: {
+          productId,
+          audienceId,
+        },
+      });
+    }
+
+    // Trả về danh sách audiences của product
+    const productAudiences = await prisma.productAudience.findMany({
+      where: { productId },
+      include: {
+        audience: true,
+      },
+    });
+
+    return productAudiences.map((pa) => pa.audience);
   }
 
   static async addCategoryToProduct(

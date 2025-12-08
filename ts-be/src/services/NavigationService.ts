@@ -4,6 +4,9 @@ import { SportService } from "./SportService.js";
 
 export class NavigationService {
   static async getMainNavigation() {
+    //lấy id của phụ kiện bằng slug phụ kiện
+    const idPhuKien = await CategoryService.getCategoryIdBySlug("phu-kien");
+
     // 1. Fetch Data Parallel
     const [
       menCategories,
@@ -16,7 +19,9 @@ export class NavigationService {
       CategoryService.getCategoryByAudienceSlug("nam"),
       CategoryService.getCategoryByAudienceSlug("nu"),
       CategoryService.getCategoryByAudienceSlug("tre-em"),
-      CategoryService.getCategoryById(22), // ID 22 là Phụ Kiện
+      // CategoryService.getCategoryById(Number(idPhuKien?.id)),
+      CategoryService.getCategoryIdBySlug("phu-kien"),
+
       BrandService.getBrandNames(),
       SportService.getSportNames(),
     ]);

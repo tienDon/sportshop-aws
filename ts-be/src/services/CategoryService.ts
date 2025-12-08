@@ -135,4 +135,17 @@ export class CategoryService {
     });
     return categoryAttributes;
   }
+
+  static async getCategoryIdBySlug(slug: string) {
+    return prisma.category.findUnique({
+      where: { slug },
+      include: {
+        children: {
+          include: {
+            children: true,
+          },
+        },
+      },
+    });
+  }
 }

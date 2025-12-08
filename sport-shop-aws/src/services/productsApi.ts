@@ -1,6 +1,6 @@
 import api from "@/lib/axios";
 import type {
-  BackendProduct,
+  // BackendProduct,
   ProductSummary,
   ProductDetailResponse,
 } from "@/types/api";
