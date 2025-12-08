@@ -19,6 +19,7 @@ export interface ProductFilters {
   bestSeller?: boolean;
   sort_by?: string;
   badge?: string;
+  color?: string;
 }
 
 export interface ProductsResponse {
@@ -48,6 +49,11 @@ export class ProductsAPI {
     // Map filters to backend params
     if (filters.category) params.append("slugCategory", filters.category);
     if (filters.brand) params.append("slugBrand", filters.brand);
+    if (filters.color) params.append("color", filters.color);
+    if (filters.minPrice)
+      params.append("minPrice", filters.minPrice.toString());
+    if (filters.maxPrice)
+      params.append("maxPrice", filters.maxPrice.toString());
     if (filters.gender) params.append("slugAudience", filters.gender);
     if (filters.sport) params.append("slugSport", filters.sport);
     if (filters.search) params.append("q", filters.search);

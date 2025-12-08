@@ -1,4 +1,12 @@
 import type { ProductFilters as APIProductFilters } from "@/services/productsApi";
+import { useQuery } from "@tanstack/react-query";
+import { BrandAPI } from "@/services/brandApi";
+import { ColorAPI } from "@/services/colorApi";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 interface ProductFiltersProps {
   filters: APIProductFilters;
@@ -6,26 +14,113 @@ interface ProductFiltersProps {
 }
 
 const ProductFilters = ({ filters, onFiltersChange }: ProductFiltersProps) => {
+  // Fetch Brands
+  const { data: brandData, isLoading: isLoadingBrands } = useQuery({
+    queryKey: ["brands"],
+    queryFn: BrandAPI.getAllBrands,
+  });
+
+  // Fetch Colors
+  const { data: colorData, isLoading: isLoadingColors } = useQuery({
+    queryKey: ["colors"],
+    queryFn: ColorAPI.getAllColors,
+  });
+
+  const brands = brandData?.data?.brands || [];
+  const colors = colorData?.data || [];
+
+  const handleBrandChange = (brandSlug: string) => {
+    // Currently supporting single brand selection for simplicity,
+    // but could be extended to multiple if API supports it
+    if (filters.brand === brandSlug) {
+      onFiltersChange({ ...filters, brand: undefined });
+    } else {
+      onFiltersChange({ ...filters, brand: brandSlug });
+    }
+  };
+
+  const handleColorChange = (colorName: string) => {
+    if (filters.color === colorName) {
+      onFiltersChange({ ...filters, color: undefined });
+    } else {
+      onFiltersChange({ ...filters, color: colorName });
+    }
+  };
+
+  const handlePriceChange = (min?: number, max?: number) => {
+    // Toggle logic: if clicking the same range, clear it
+    if (filters.minPrice === min && filters.maxPrice === max) {
+      onFiltersChange({ ...filters, minPrice: undefined, maxPrice: undefined });
+    } else {
+      onFiltersChange({ ...filters, minPrice: min, maxPrice: max });
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm">
       <h3 className="text-lg font-semibold mb-4">Bộ lọc</h3>
+
+      {/* Search */}
+      <div className="mb-6">
+        <h4 className="font-medium mb-2">Tìm kiếm</h4>
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            placeholder="Tìm kiếm sản phẩm..."
+            className="pl-8"
+            value={filters.search || ""}
+            onChange={(e) =>
+              onFiltersChange({ ...filters, search: e.target.value })
+            }
+          />
+        </div>
+      </div>
 
       {/* Price Range */}
       <div className="mb-6">
         <h4 className="font-medium mb-2">Khoảng giá</h4>
         <div className="space-y-2">
-          <label className="flex items-center">
-            <input type="checkbox" className="mr-2" />
-            <span className="text-sm">Dưới 500.000đ</span>
-          </label>
-          <label className="flex items-center">
-            <input type="checkbox" className="mr-2" />
-            <span className="text-sm">500.000đ - 1.000.000đ</span>
-          </label>
-          <label className="flex items-center">
-            <input type="checkbox" className="mr-2" />
-            <span className="text-sm">Trên 1.000.000đ</span>
-          </label>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="price-1"
+              checked={filters.maxPrice === 500000}
+              onCheckedChange={() => handlePriceChange(0, 500000)}
+            />
+            <Label
+              htmlFor="price-1"
+              className="text-sm font-normal cursor-pointer"
+            >
+              Dưới 500.000đ
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="price-2"
+              checked={
+                filters.minPrice === 500000 && filters.maxPrice === 1000000
+              }
+              onCheckedChange={() => handlePriceChange(500000, 1000000)}
+            />
+            <Label
+              htmlFor="price-2"
+              className="text-sm font-normal cursor-pointer"
+            >
+              500.000đ - 1.000.000đ
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="price-3"
+              checked={filters.minPrice === 1000000 && !filters.maxPrice}
+              onCheckedChange={() => handlePriceChange(1000000, undefined)}
+            />
+            <Label
+              htmlFor="price-3"
+              className="text-sm font-normal cursor-pointer"
+            >
+              Trên 1.000.000đ
+            </Label>
+          </div>
         </div>
       </div>
 
@@ -33,27 +128,54 @@ const ProductFilters = ({ filters, onFiltersChange }: ProductFiltersProps) => {
       <div className="mb-6">
         <h4 className="font-medium mb-2">Thương hiệu</h4>
         <div className="space-y-2">
-          {["Nike", "Adidas", "Puma", "Under Armour"].map((brand) => (
-            <label key={brand} className="flex items-center">
-              <input type="checkbox" className="mr-2" />
-              <span className="text-sm">{brand}</span>
-            </label>
-          ))}
+          {isLoadingBrands
+            ? Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-5 w-full" />
+              ))
+            : brands.map((brand) => (
+                <div key={brand._id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`brand-${brand._id}`}
+                    checked={filters.brand === brand.slug}
+                    onCheckedChange={() => handleBrandChange(brand.slug)}
+                  />
+                  <Label
+                    htmlFor={`brand-${brand._id}`}
+                    className="text-sm font-normal cursor-pointer uppercase"
+                  >
+                    {brand.name}
+                  </Label>
+                </div>
+              ))}
         </div>
       </div>
 
       {/* Colors */}
       <div className="mb-6">
         <h4 className="font-medium mb-2">Màu sắc</h4>
-        <div className="flex flex-wrap gap-2">
-          {["black", "white", "red", "blue", "green"].map((color) => (
-            <div
-              key={color}
-              className="w-8 h-8 rounded-full border-2 border-gray-300 cursor-pointer"
-              style={{ backgroundColor: color === "black" ? "#000" : color }}
-            />
-          ))}
-        </div>
+        {isLoadingColors ? (
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="w-8 h-8 rounded-full" />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {colors.map((color: any) => (
+              <div
+                key={color.id}
+                className={`w-8 h-8 rounded-full border cursor-pointer transition-all ${
+                  filters.color === color.hexCode
+                    ? "ring-2 ring-offset-2 ring-blue-500 border-blue-500"
+                    : "border-gray-300 hover:scale-110"
+                }`}
+                style={{ backgroundColor: color.hexCode }}
+                title={color.name}
+                onClick={() => handleColorChange(color.hexCode)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
