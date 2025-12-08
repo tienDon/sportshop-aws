@@ -47,4 +47,29 @@ export class SportService {
     });
     return sports;
   }
+
+  static async removeSport(id: number) {
+    await prisma.sport.delete({
+      where: {
+        id,
+      },
+    });
+  }
+
+  static async updateSport(
+    id: number,
+    data: {
+      name?: string;
+      slug?: string;
+      isActive?: boolean;
+      sort_order?: number;
+    }
+  ) {
+    return await prisma.sport.update({
+      where: {
+        id,
+      },
+      data,
+    });
+  }
 }

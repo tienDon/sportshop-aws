@@ -2,9 +2,9 @@ import { Link } from "react-router";
 import Container from "@/components/ui/Container";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { useQuery } from "@tanstack/react-query";
-import { BrandAPI } from "@/services/brandApi";
-import type { Brand } from "@/types/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { brandApi } from "@/services/brandApi";
+import type { Brand } from "@/services/brandApi";
 
 const BrandsPage = () => {
   // Fetch all brands
@@ -14,7 +14,7 @@ const BrandsPage = () => {
     error,
   } = useQuery({
     queryKey: ["brands", "all"],
-    queryFn: () => BrandAPI.getAllBrands(),
+    queryFn: () => brandApi.getAll(),
   });
 
   const breadcrumbItems = [
@@ -61,7 +61,7 @@ const BrandsPage = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-16">
             {response.data.brands.map((brand: Brand) => (
               <Link
-                key={brand._id}
+                key={brand.id}
                 to={`/collections?brand=${brand.slug}`}
                 className="group block"
               >

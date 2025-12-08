@@ -77,4 +77,22 @@ export class BrandService {
     });
     return brands;
   }
+
+  static async updateBrand(
+    id: number,
+    data: {
+      name?: string;
+      description?: string;
+      logo?: string;
+      banner?: string;
+      isActive?: boolean;
+      slug?: string;
+    }
+  ) {
+    // To be implemented
+    return prisma.brand.update({
+      where: { id },
+      data,
+    });
+  }
 }

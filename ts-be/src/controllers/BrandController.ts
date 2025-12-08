@@ -75,7 +75,7 @@ export const getBrand = async (req: Request, res: Response) => {
 
 export const createBrand = async (req: Request, res: Response) => {
   try {
-    const { name, description, logo, banner, isActive, slug } = req.body;
+    const { name, slug, description, logo, banner, isActive } = req.body;
 
     if (!name) {
       res.status(400).json({
@@ -121,10 +121,29 @@ export const createBrand = async (req: Request, res: Response) => {
 };
 
 export const updateBrand = async (req: Request, res: Response) => {
-  res.status(501).json({
-    success: false,
-    message: "Update brand not implemented yet",
-  });
+  try {
+    const { id } = req.params;
+    const { name, slug, description, logo, banner, isActive } = req.body;
+    const updatedBrand = await BrandService.updateBrand(Number(id), {
+      name,
+      slug,
+      description,
+      logo,
+      banner,
+      isActive,
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Brand updated successfully",
+      data: updatedBrand,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error updating brand",
+      error: (error as Error).message,
+    });
+  }
 };
 
 export const deleteBrand = async (req: Request, res: Response) => {

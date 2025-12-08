@@ -1,12 +1,13 @@
 import type { ProductFilters as APIProductFilters } from "@/services/productsApi";
 import { useQuery } from "@tanstack/react-query";
-import { BrandAPI } from "@/services/brandApi";
+// import { BrandAPI } from "@/services/brandApi";
 import { ColorAPI } from "@/services/colorApi";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { brandApi } from "@/services/brandApi";
 
 interface ProductFiltersProps {
   filters: APIProductFilters;
@@ -17,7 +18,7 @@ const ProductFilters = ({ filters, onFiltersChange }: ProductFiltersProps) => {
   // Fetch Brands
   const { data: brandData, isLoading: isLoadingBrands } = useQuery({
     queryKey: ["brands"],
-    queryFn: BrandAPI.getAllBrands,
+    queryFn: brandApi.getAll,
   });
 
   // Fetch Colors
@@ -133,14 +134,14 @@ const ProductFilters = ({ filters, onFiltersChange }: ProductFiltersProps) => {
                 <Skeleton key={i} className="h-5 w-full" />
               ))
             : brands.map((brand) => (
-                <div key={brand._id} className="flex items-center space-x-2">
+                <div key={brand.id} className="flex items-center space-x-2">
                   <Checkbox
-                    id={`brand-${brand._id}`}
+                    id={`brand-${brand.id}`}
                     checked={filters.brand === brand.slug}
                     onCheckedChange={() => handleBrandChange(brand.slug)}
                   />
                   <Label
-                    htmlFor={`brand-${brand._id}`}
+                    htmlFor={`brand-${brand.id}`}
                     className="text-sm font-normal cursor-pointer uppercase"
                   >
                     {brand.name}

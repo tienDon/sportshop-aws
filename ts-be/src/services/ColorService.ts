@@ -17,4 +17,24 @@ export class ColorService {
       },
     });
   }
+
+  static async updateColor(id: string, name: string, hexCode: string) {
+    return await prisma.color.update({
+      where: {
+        id: Number(id),
+      },
+      data: {
+        name,
+        hexCode,
+      },
+    });
+  }
+
+  static async deleteColor(id: string) {
+    return await prisma.color.delete({
+      where: {
+        id: Number(id),
+      },
+    });
+  }
 }

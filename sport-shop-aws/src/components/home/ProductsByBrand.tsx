@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ui/ProductCard";
 import { useQuery } from "@tanstack/react-query";
-import { BrandAPI } from "@/services/brandApi";
+// import { BrandAPI } from "@/services/brandApi";
 import { ProductsAPI } from "@/services/productsApi";
 import { Loader2 } from "lucide-react";
+import { brandApi } from "@/services/brandApi";
 
 const ProductsByBrand = () => {
   const [selectedBrand, setSelectedBrand] = useState<string>("");
@@ -12,7 +13,7 @@ const ProductsByBrand = () => {
   // Fetch Brands
   const { data: brandData, isLoading: isLoadingBrands } = useQuery({
     queryKey: ["brands"],
-    queryFn: BrandAPI.getAllBrands,
+    queryFn: brandApi.getAll,
   });
 
   const brands = brandData?.data?.brands || [];
@@ -47,7 +48,7 @@ const ProductsByBrand = () => {
       <div className="flex flex-wrap justify-center gap-4 mb-8 ">
         {brands.slice(0, 4).map((brand) => (
           <Button
-            key={brand._id}
+            key={brand.id}
             onClick={() => setSelectedBrand(brand.slug)}
             variant={selectedBrand === brand.slug ? "default" : "outline"}
             className={`px-6 py-3 rounded-full transition-all uppercase ${

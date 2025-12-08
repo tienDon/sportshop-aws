@@ -1,8 +1,9 @@
 import { ArrowBigRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BrandAPI } from "@/services/brandApi";
+// import { BrandAPI } from "@/services/brandApi";
 import { useNavigate } from "react-router";
+import { brandApi } from "@/services/brandApi";
 
 const FavoriteBrands = () => {
   const [timeLeft, setTimeLeft] = useState("");
@@ -10,7 +11,7 @@ const FavoriteBrands = () => {
 
   const { data: brandData } = useQuery({
     queryKey: ["brands"],
-    queryFn: BrandAPI.getAllBrands,
+    queryFn: brandApi.getAll,
   });
 
   const brands = brandData?.data?.brands || [];
@@ -50,7 +51,7 @@ const FavoriteBrands = () => {
       <div className=" grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2  gap-2 ">
         {brands.slice(0, 4).map((brand) => (
           <div
-            key={brand._id}
+            key={brand.id}
             className="flex relative flex-col items-center group overflow-hidden"
           >
             <img
