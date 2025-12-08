@@ -12,6 +12,7 @@ import { Toaster } from "sonner";
 import { useAuthStore } from "./store/useAuthStore";
 import QueryProvider from "./providers/QueryProvider";
 import MainLayout from "./components/layout/MainLayout";
+import ChatBubble from "./components/common/ChatBubble";
 
 const App = () => {
   const { initializeAuth } = useAuthStore();
@@ -78,6 +79,7 @@ const App = () => {
           {/* Catch-all route */}
           <Route path="*" element={<div>Page not found</div>} />
         </Routes>
+        <ChatBubble />
       </BrowserRouter>
     </QueryProvider>
   );

@@ -145,13 +145,8 @@ const CartSheet = () => {
               <button className="w-full bg-[#0f172a] text-white h-12 rounded-sm font-bold uppercase hover:bg-[#1e293b] transition-colors">
                 Thanh toán
               </button>
-              <Link
-                to="/cart"
-                className="flex items-center justify-center w-full border border-gray-300 text-gray-900 h-12 rounded-sm font-bold uppercase hover:bg-gray-50 transition-colors"
-              >
-                Giỏ hàng
-              </Link>
             </div>
+            <div className="mt-6"></div>
           </div>
         )}
       </SheetContent>
