@@ -24,7 +24,7 @@ const ProductFilters = ({ filters, onFiltersChange }: ProductFiltersProps) => {
   // Fetch Colors
   const { data: colorData, isLoading: isLoadingColors } = useQuery({
     queryKey: ["colors"],
-    queryFn: ColorAPI.getAllColors,
+    queryFn: ColorAPI.getAll,
   });
 
   const brands = brandData?.data?.brands || [];

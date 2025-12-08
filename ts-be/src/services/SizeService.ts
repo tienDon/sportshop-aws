@@ -2,15 +2,55 @@ import { prisma } from "../lib/prisma.js";
 import { SizeChartType } from "../../generated/prisma/enums.js";
 
 export class SizeService {
-  static async getAllSizes() {
-    return prisma.size.findMany();
+  static async getAllSizes(page?: number, limit?: number) {
+    if (page && limit) {
+      const skip = (page - 1) * limit;
+      const [sizes, total] = await Promise.all([
+        prisma.size.findMany({
+          skip,
+          take: limit,
+          orderBy: { sortOrder: "asc" },
+        }),
+        prisma.size.count(),
+      ]);
+      return {
+        sizes,
+        total,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+      };
+    }
+    return prisma.size.findMany({ orderBy: { sortOrder: "asc" } });
   }
 
-  static async getSizeByChartType(chartType: SizeChartType) {
+  static async getSizeByChartType(
+    chartType: SizeChartType,
+    page?: number,
+    limit?: number
+  ) {
+    if (page && limit) {
+      const skip = (page - 1) * limit;
+      const [sizes, total] = await Promise.all([
+        prisma.size.findMany({
+          where: { chartType },
+          skip,
+          take: limit,
+          orderBy: { sortOrder: "asc" },
+        }),
+        prisma.size.count({ where: { chartType } }),
+      ]);
+      return {
+        sizes,
+        total,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+      };
+    }
     return prisma.size.findMany({
       where: {
         chartType: chartType,
       },
+      orderBy: { sortOrder: "asc" },
     });
   }
 
@@ -35,5 +75,25 @@ export class SizeService {
 
   static async deleteAllSizes() {
     return prisma.size.deleteMany();
+  }
+
+  static async deleteSize(id: number) {
+    return prisma.size.delete({
+      where: {
+        id,
+      },
+    });
+  }
+
+  static async updateSize(
+    id: number,
+    data: { name?: string; chartType?: SizeChartType; sortOrder?: number }
+  ) {
+    return prisma.size.update({
+      where: {
+        id,
+      },
+      data,
+    });
   }
 }

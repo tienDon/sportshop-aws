@@ -4,7 +4,10 @@ import { SizeChartType } from "../../generated/prisma/enums.js";
 
 export const getAllSizes = async (req: Request, res: Response) => {
   try {
-    let { chartType } = req.query;
+    let { chartType, page, limit } = req.query;
+    const pageNum = page ? parseInt(page as string) : undefined;
+    const limitNum = limit ? parseInt(limit as string) : undefined;
+
     if (chartType) {
       chartType = chartType?.toString().replace(/[-\s]/g, "_").toUpperCase();
       console.log(chartType);
@@ -16,20 +19,42 @@ export const getAllSizes = async (req: Request, res: Response) => {
           ).join(", ")}`,
         });
       }
-      const sizes = await SizeService.getSizeByChartType(
-        chartType as SizeChartType
+      const result = await SizeService.getSizeByChartType(
+        chartType as SizeChartType,
+        pageNum,
+        limitNum
       );
+
+      // Check if result is paginated or array
+      if (pageNum && limitNum) {
+        return res.status(200).json({
+          success: true,
+          message: "Fetched sizes by chart type successfully",
+          data: result, // { sizes, total, totalPages, currentPage }
+        });
+      }
+
       return res.status(200).json({
         success: true,
         message: "Fetched sizes by chart type successfully",
-        data: sizes,
+        data: result,
       });
     }
-    const sizes = await SizeService.getAllSizes();
+
+    const result = await SizeService.getAllSizes(pageNum, limitNum);
+
+    if (pageNum && limitNum) {
+      return res.status(200).json({
+        success: true,
+        message: "Fetched all sizes successfully",
+        data: result,
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: "Fetched all sizes successfully",
-      data: sizes,
+      data: result,
     });
   } catch (error: any) {
     return res.status(500).json({
@@ -110,23 +135,67 @@ export const createSize = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteAllSizes = async (req: Request, res: Response) => {
+const isSizeChartType = (value: any): value is SizeChartType => {
+  return Object.values(SizeChartType).includes(value);
+};
+
+export const deleteSize = async (req: Request, res: Response) => {
   try {
-    const deletedSizes = await SizeService.deleteAllSizes();
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Size id is required",
+      });
+    }
+    const size = await SizeService.deleteSize(Number(id));
     return res.status(200).json({
       success: true,
-      message: "All sizes deleted successfully",
-      data: deletedSizes,
+      message: "Size deleted successfully",
+      data: size,
     });
   } catch (error: any) {
     return res.status(500).json({
       success: false,
-      message: "Error deleting all sizes",
+      message: "Error deleting size",
       error: error.message,
     });
   }
 };
 
-const isSizeChartType = (value: any): value is SizeChartType => {
-  return Object.values(SizeChartType).includes(value);
+export const updateSize = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Size id is required",
+      });
+    }
+    const { name, chartType, sortOrder } = req.body;
+    const size = await SizeService.updateSize(Number(id), {
+      name,
+      chartType,
+      sortOrder,
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Size updated successfully",
+      data: size,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error updating size",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getChartSize = async (req: Request, res: Response) => {
+  return res.status(200).json({
+    superss: true,
+    message: "Fetched chart types successfully",
+    data: Object.values(SizeChartType),
+  });
 };
