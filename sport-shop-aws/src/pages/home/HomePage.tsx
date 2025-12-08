@@ -1,5 +1,3 @@
-import AnnouncementBanner from "@/components/layout/header/AnnouncementBanner";
-import Header from "../../components/layout/header/Header";
 import HeroBanner from "@/components/home/HeroBanner";
 import FavoriteBrands from "@/components/home/FavoriteBrands";
 import ProductsByBrand from "@/components/home/ProductsByBrand";
@@ -9,9 +7,7 @@ const HomePage = () => {
   return (
     <div className="h-[400vh]">
       {/* <div className="min-h-screen"> */}
-      <Header />
-      <AnnouncementBanner />
-
+      
       <HeroBanner />
 
       {/* <HeroBanner /> */}

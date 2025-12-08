@@ -1,6 +1,4 @@
 import { useParams, useLocation } from "react-router";
-import Header from "@/components/layout/header/Header";
-import AnnouncementBanner from "@/components/layout/header/AnnouncementBanner";
 import Container from "@/components/ui/Container";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { useProductDetail } from "@/hooks/useProductDetail";
@@ -21,8 +19,6 @@ const ProductDetailPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
-        <AnnouncementBanner />
         <Container>
           <div className="py-8 text-center">Đang tải sản phẩm...</div>
         </Container>
@@ -33,8 +29,6 @@ const ProductDetailPage = () => {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
-        <AnnouncementBanner />
         <Container>
           <div className="py-8 text-center text-red-600">
             {error || "Không tìm thấy sản phẩm"}
@@ -46,8 +40,6 @@ const ProductDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      <AnnouncementBanner />
       <Container>
         <Breadcrumb items={getBreadcrumb(breadcrumbFromState, product)} />
 

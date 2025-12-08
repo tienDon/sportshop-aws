@@ -1,6 +1,4 @@
 import { useState } from "react";
-import Header from "@/components/layout/header/Header";
-import AnnouncementBanner from "@/components/layout/header/AnnouncementBanner";
 import Container from "@/components/ui/Container";
 import ProductListing from "@/components/products/ProductListing";
 import { useProducts } from "@/hooks/useProductsQuery";
@@ -35,9 +33,6 @@ const ProductsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      <AnnouncementBanner />
-
       <Container>
         <ProductListing
           title={pageTitle}

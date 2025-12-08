@@ -57,7 +57,11 @@ export class UserAddressService {
 
       if (data.is_default) {
         await tx.userAddress.updateMany({
-          where: { user_id: userId, is_default: true },
+          where: {
+            user_id: userId,
+            is_default: true,
+            id: { not: addressId },
+          },
           data: { is_default: false },
         });
       }

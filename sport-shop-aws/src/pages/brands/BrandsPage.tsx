@@ -1,6 +1,4 @@
 import { Link } from "react-router";
-import Header from "@/components/layout/header/Header";
-import AnnouncementBanner from "@/components/layout/header/AnnouncementBanner";
 import Container from "@/components/ui/Container";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { useQuery } from "@tanstack/react-query";
@@ -25,10 +23,7 @@ const BrandsPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <AnnouncementBanner />
-
+    <div className="min-h-screen bg-white">
       <Container>
         {/* Breadcrumb */}
         <Breadcrumb items={breadcrumbItems} />
@@ -38,23 +33,16 @@ const BrandsPage = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-4 uppercase">
             Thương Hiệu
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Khám phá các thương hiệu thể thao hàng đầu thế giới tại SuperSports
-          </p>
         </div>
 
         {/* Loading State */}
         {isLoading && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <div
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-12">
+            {Array.from({ length: 12 }).map((_, index) => (
+              <Skeleton
                 key={index}
-                className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 flex flex-col items-center space-y-4"
-              >
-                <Skeleton className="h-24 w-24 rounded-full" />
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-full" />
-              </div>
+                className="aspect-[3/2] w-full rounded-none"
+              />
             ))}
           </div>
         )}
@@ -69,50 +57,26 @@ const BrandsPage = () => {
         )}
 
         {/* Brands Grid */}
-        {!isLoading && !error && response?.data && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-16">
-            {response.data.map((brand: Brand) => (
+        {!isLoading && !error && response?.data?.brands && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-16">
+            {response.data.brands.map((brand: Brand) => (
               <Link
                 key={brand._id}
-                to={`/brands/${brand.slug}`}
-                className="group block h-full"
+                to={`/collections?brand=${brand.slug}`}
+                className="group block"
               >
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-red-200 transition-all duration-300 h-full flex flex-col items-center text-center">
-                  {/* Logo Area */}
-                  <div className="w-32 h-32 mb-6 flex items-center justify-center bg-gray-50 rounded-full group-hover:bg-white transition-colors duration-300 overflow-hidden p-4">
-                    {brand.logo ? (
-                      <img
-                        src={brand.logo}
-                        alt={brand.name}
-                        className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-110"
-                      />
-                    ) : (
-                      <span className="text-2xl font-bold text-gray-400 group-hover:text-red-500 transition-colors">
-                        {brand.name.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Content Area */}
-                  <div className="flex-1 flex flex-col items-center w-full">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-red-600 transition-colors">
+                <div className="bg-[#f8f8f8] aspect-[4/2] flex items-center justify-center  hover:bg-gray-100 transition-colors duration-300">
+                  {brand.logo ? (
+                    <img
+                      src={brand.logo}
+                      alt={brand.name}
+                      className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <span className="text-lg font-bold text-gray-400 group-hover:text-gray-900 transition-colors text-center uppercase">
                       {brand.name}
-                    </h3>
-
-                    {brand.description ? (
-                      <p className="text-sm text-gray-500 line-clamp-2 mb-4">
-                        {brand.description}
-                      </p>
-                    ) : (
-                      <p className="text-sm text-gray-400 italic mb-4">
-                        Thương hiệu thể thao chính hãng
-                      </p>
-                    )}
-
-                    <span className="mt-auto text-sm font-medium text-red-600 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                      Xem sản phẩm &rarr;
                     </span>
-                  </div>
+                  )}
                 </div>
               </Link>
             ))}

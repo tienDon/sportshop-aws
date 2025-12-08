@@ -3,8 +3,11 @@ import type { Brand } from "@/types/api";
 
 export interface BrandsResponse {
   success: boolean;
-  data: Brand[];
-  count: number;
+  message: string;
+  data: {
+    brands: Brand[];
+    count: number;
+  };
 }
 
 export class BrandAPI {

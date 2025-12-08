@@ -12,6 +12,7 @@ import {
   getPhones,
   updatePhone,
 } from "@/controllers/UserPhoneController.js";
+import { getAllUsers } from "@/controllers/UserController.js";
 
 const router = Router();
 
@@ -27,4 +28,5 @@ router.post("/phones", authenticateToken, createPhone);
 router.put("/phones/:id", authenticateToken, updatePhone);
 router.delete("/phones/:id", authenticateToken, deletePhone);
 
+router.get("/", getAllUsers);
 export default router;

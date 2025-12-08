@@ -26,7 +26,7 @@ export interface AuthState {
   // Auth actions
   requestOtp: (
     identifier: string,
-    name?: string
+    full_name?: string
   ) => Promise<RequestOtpResponse>;
   verifyOtp: (otpCode: string) => Promise<VerifyOtpResponse>;
   resendOtp: () => Promise<ResendOtpResponse>;

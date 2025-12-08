@@ -74,7 +74,11 @@ export class UserPhoneService {
 
       if (data.is_default) {
         await tx.userPhone.updateMany({
-          where: { user_id: userId, is_default: true },
+          where: {
+            user_id: userId,
+            is_default: true,
+            id: { not: phoneId },
+          },
           data: { is_default: false },
         });
       }

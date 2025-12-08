@@ -1,8 +1,19 @@
 import { ArrowBigRight } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { BrandAPI } from "@/services/brandApi";
+import { useNavigate } from "react-router";
 
 const FavoriteBrands = () => {
   const [timeLeft, setTimeLeft] = useState("");
+  const navigate = useNavigate();
+
+  const { data: brandData } = useQuery({
+    queryKey: ["brands"],
+    queryFn: BrandAPI.getAllBrands,
+  });
+
+  const brands = brandData?.data?.brands || [];
 
   useEffect(() => {
     const targetDate = new Date("2025-12-25T00:00:00"); // Ngày Noel
@@ -28,13 +39,6 @@ const FavoriteBrands = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const brands = [
-    { name: "Nike", image: "https://placehold.co/700x300" },
-    { name: "Adidas", image: "https://placehold.co/700x300" },
-    { name: "Puma", image: "https://placehold.co/700x300" },
-    { name: "Under Armour", image: "https://placehold.co/700x300" },
-  ];
-
   return (
     <div className="py-12 bg-white">
       <h2 className="text-2xl font-bold text-center mb-6">
@@ -44,16 +48,24 @@ const FavoriteBrands = () => {
         Thời gian còn lại: {timeLeft}
       </p>
       <div className=" grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2  gap-2 ">
-        {brands.map((brand) => (
-          <div key={brand.name} className="flex relative flex-col items-center">
+        {brands.slice(0, 4).map((brand) => (
+          <div
+            key={brand._id}
+            className="flex relative flex-col items-center group overflow-hidden"
+          >
             <img
-              src={brand.image}
+              src={
+                brand.logo || `https://placehold.co/700x300?text=${brand.name}`
+              }
               alt={brand.name}
-              className=" object-contain mb-2"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
-            {/* <p className="text-lg font-semibold">{brand.name}</p> */}
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
             <div className="absolute bottom-6 right-4">
-              <button className="mt-4 px-6 py-3 bg-red-500 text-white rounded-lg flex items-center gap-2 hover:bg-red-600 transition group">
+              <button
+                onClick={() => navigate(`/collections?brand=${brand.slug}`)}
+                className="mt-4 px-6 py-3 bg-red-500 text-white rounded-lg flex items-center gap-2 hover:bg-red-600 transition group-btn"
+              >
                 <span className="group-hover:translate-x-1 transition-transform">
                   Mua ngay
                 </span>

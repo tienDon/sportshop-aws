@@ -53,14 +53,16 @@ export const useAuthStore = create<AuthState>()(
       // Request OTP cho cả signup và signin
       requestOtp: async (
         identifier: string,
-        name?: string
+        full_name?: string
       ): Promise<RequestOtpResponse> => {
         set({ loading: true });
 
         try {
-          const payload: { identifier: string; name?: string } = { identifier };
-          if (name) {
-            payload.name = name;
+          const payload: { identifier: string; full_name?: string } = {
+            identifier,
+          };
+          if (full_name) {
+            payload.full_name = full_name;
           }
 
           const res = await api.post("/api/auth/request-otp", payload);
@@ -74,7 +76,7 @@ export const useAuthStore = create<AuthState>()(
               otpExpiresAt: data.expiresAt || null,
             });
 
-            const actionType = name ? "Đăng ký" : "Đăng nhập";
+            const actionType = full_name ? "Đăng ký" : "Đăng nhập";
             toast.success(`${actionType} thành công! Vui lòng kiểm tra OTP.`);
           }
 
@@ -119,6 +121,7 @@ export const useAuthStore = create<AuthState>()(
 
             toast.success("Xác thực thành công!");
           }
+          console.log(data);
 
           return data;
         } catch (error: any) {

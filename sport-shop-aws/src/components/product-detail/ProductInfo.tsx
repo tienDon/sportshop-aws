@@ -12,6 +12,7 @@ import type { useProductDetail } from "@/hooks/useProductDetail";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/store/useCartStore";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 
 // Sử dụng ReturnType của hook để đảm bảo props đồng bộ
 type ProductInfoProps = ReturnType<typeof useProductDetail>;
@@ -33,6 +34,7 @@ const ProductInfo = ({
   currentVariant,
 }: ProductInfoProps) => {
   const { addToCart, isAdding } = useCartStore();
+  const navigate = useNavigate();
 
   if (!product) return null;
 
@@ -46,6 +48,15 @@ const ProductInfo = ({
       return;
     }
     await addToCart(currentVariant.id, quantity);
+  };
+
+  const handleBuyNow = async () => {
+    if (!currentVariant) {
+      toast.error("Vui lòng chọn màu sắc và kích thước");
+      return;
+    }
+    await addToCart(currentVariant.id, quantity);
+    navigate("/checkout");
   };
 
   return (
@@ -201,7 +212,8 @@ const ProductInfo = ({
             {isAdding ? "Đang thêm..." : "Thêm vào giỏ"}
           </button>
           <button
-            disabled={isOutOfStock}
+            onClick={handleBuyNow}
+            disabled={isOutOfStock || isAdding}
             className="flex-1 border-2 border-black text-black h-12 rounded-md font-bold hover:text-red-500 transition-colors disabled:border-gray-300 disabled:text-gray-300 disabled:cursor-not-allowed uppercase tracking-wide"
           >
             Mua ngay

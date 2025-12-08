@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 
 interface RequestOTPData {
   identifier: string;
-  name?: string;
+  full_name?: string;
 }
 
 interface VerifyOTPData {
@@ -20,9 +20,9 @@ class AuthService {
   static async requestOTP(data: RequestOTPData) {
     try {
       console.log("🔍 AuthService.requestOTP started with data:", data);
-      const { identifier, name } = data;
+      const { identifier, full_name } = data;
 
-      if (name) {
+      if (full_name) {
         // SIGNUP: Tạo user mới
         console.log("📝 Processing SIGNUP for:", identifier);
 
@@ -53,9 +53,8 @@ class AuthService {
         }
 
         const userData: any = {
-          name,
+          full_name,
           email: identifier,
-          password: "$2b$10$DummyPasswordHashForOTPUser123456", // Dummy password hash
         };
 
         const user = await prisma.user.create({

@@ -1,157 +1,97 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ui/ProductCard";
-
-// Fake data cho sản phẩm
-const productsData = {
-  nike: [
-    {
-      id: 1,
-      name: "Giày Luyện Tập Nam Nike Reax 8 TR Mesh Silver",
-      image: "https://placehold.co/245",
-      originalPrice: "2.749.000đ",
-      salePrice: "1.374.500đ",
-      discount: "-50%",
-      rating: 4.5,
-      reviews: 4,
-      colors: ["gray", "black"],
-      isBlackFriday: true,
-      lastChance: true,
-    },
-    {
-      id: 2,
-      name: "Giày Golf Nam Nike Air Zoom Infinity Tour 2 Wide",
-      image: "https://placehold.co/245",
-      originalPrice: "6.499.000đ",
-      salePrice: "3.249.500đ",
-      discount: "-50%",
-      rating: 4.0,
-      reviews: 2,
-      colors: ["black", "brown"],
-      isBlackFriday: true,
-      lastChance: true,
-    },
-    // Thêm sản phẩm Nike khác...
-  ],
-  adidas: [
-    {
-      id: 3,
-      name: "Giày Thể Thao Adidas Ultraboost 22",
-      image: "https://placehold.co/245x245",
-      originalPrice: "4.500.000đ",
-      salePrice: "2.250.000đ",
-      discount: "-50%",
-      rating: 4.8,
-      reviews: 12,
-      colors: ["white", "black"],
-      isBlackFriday: true,
-      lastChance: false,
-    },
-    // Thêm sản phẩm Adidas khác...
-  ],
-  puma: [
-    {
-      id: 4,
-      name: "Giày Chạy Bộ Puma Velocity Nitro 3",
-      image: "https://placehold.co/245x245",
-      originalPrice: "3.200.000đ",
-      salePrice: "1.600.000đ",
-      discount: "-50%",
-      rating: 4.3,
-      reviews: 8,
-      colors: ["blue", "red"],
-      isBlackFriday: true,
-      lastChance: true,
-    },
-    // Thêm sản phẩm Puma khác...
-  ],
-  columbia: [
-    {
-      id: 5,
-      name: "Áo Khoác Columbia Windbreaker",
-      image: "https://placehold.co/245x245",
-      originalPrice: "2.800.000đ",
-      salePrice: "1.400.000đ",
-      discount: "-50%",
-      rating: 4.6,
-      reviews: 15,
-      colors: ["navy", "green"],
-      isBlackFriday: true,
-      lastChance: false,
-    },
-    // Thêm sản phẩm Columbia khác...
-  ],
-};
-
-const brands = [
-  { id: "nike", name: "NIKE", label: "SIÊU ƯU ĐÃI", active: true },
-  { id: "adidas", name: "ADIDAS", label: "DEAL HỪNG NHÁ MUA", active: false },
-  { id: "puma", name: "UA", label: "GIÁ TỐT NHẤT NĂM", active: false },
-  { id: "columbia", name: "COLUMBIA", label: "SALE CỰC SỐC", active: false },
-];
+import { useQuery } from "@tanstack/react-query";
+import { BrandAPI } from "@/services/brandApi";
+import { ProductsAPI } from "@/services/productsApi";
+import { Loader2 } from "lucide-react";
 
 const ProductsByBrand = () => {
-  const [selectedBrand, setSelectedBrand] = useState("nike");
-  const [brandButtons, setBrandButtons] = useState(brands);
+  const [selectedBrand, setSelectedBrand] = useState<string>("");
 
-  const handleBrandClick = (brandId: string) => {
-    setSelectedBrand(brandId);
-    setBrandButtons(
-      brandButtons.map((brand) => ({
-        ...brand,
-        active: brand.id === brandId,
-      }))
+  // Fetch Brands
+  const { data: brandData, isLoading: isLoadingBrands } = useQuery({
+    queryKey: ["brands"],
+    queryFn: BrandAPI.getAllBrands,
+  });
+
+  const brands = brandData?.data?.brands || [];
+
+  // Set default selected brand
+  useEffect(() => {
+    if (brands.length > 0 && !selectedBrand) {
+      setSelectedBrand(brands[0].slug);
+    }
+  }, [brands, selectedBrand]);
+
+  // Fetch Products for selected brand
+  const { data: productsData, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ["products-by-brand", selectedBrand],
+    queryFn: () => ProductsAPI.getProducts({ brand: selectedBrand }),
+    enabled: !!selectedBrand,
+  });
+
+  const products = productsData?.data || [];
+
+  if (isLoadingBrands) {
+    return (
+      <div className="flex justify-center py-10">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      </div>
     );
-  };
-
-  const currentProducts =
-    productsData[selectedBrand as keyof typeof productsData] || [];
+  }
 
   return (
     <div className=" ">
       {/* Brand Filter Buttons */}
       <div className="flex flex-wrap justify-center gap-4 mb-8 ">
-        {brandButtons.map((brand) => (
+        {brands.slice(0, 4).map((brand) => (
           <Button
-            key={brand.id}
-            onClick={() => handleBrandClick(brand.id)}
-            variant={brand.active ? "default" : "outline"}
-            className={`px-6 py-3 rounded-full transition-all ${
-              brand.active
+            key={brand._id}
+            onClick={() => setSelectedBrand(brand.slug)}
+            variant={selectedBrand === brand.slug ? "default" : "outline"}
+            className={`px-6 py-3 rounded-full transition-all uppercase ${
+              selectedBrand === brand.slug
                 ? "bg-gray-900 text-white hover:bg-gray-800"
                 : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
             }`}
           >
-            {brand.name} - {brand.label}
+            {brand.name}
           </Button>
         ))}
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 ">
-        {currentProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            id={product.id}
-            name={product.name}
-            image={product.image}
-            originalPrice={product.originalPrice}
-            salePrice={product.salePrice}
-            badge={
-              product.discount
-                ? {
-                    display_text: product.discount,
-                    display_color: "#EF4444",
-                    slug: "discount",
-                  }
-                : undefined
-            }
-            rating={product.rating}
-            colors={product.colors}
-            brand={brandButtons.find((b) => b.id === selectedBrand)?.name || ""}
-          />
-        ))}
-      </div>
+      {isLoadingProducts ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 ">
+          {products.length > 0 ? (
+            products.map((product, index) => (
+              <ProductCard
+                key={product.id}
+                className={index >= 4 ? "hidden xl:block" : ""}
+                slug={product.slug}
+                name={product.name}
+                image={product.mainImageUrl || "https://placehold.co/245"}
+                originalPrice={new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(Number(product.basePrice))}
+                badge={product.badge}
+                colors={product.colors || []}
+                brand={brands.find((b) => b.slug === selectedBrand)?.name || ""}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-10 text-gray-500">
+              Chưa có sản phẩm nào cho thương hiệu này.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

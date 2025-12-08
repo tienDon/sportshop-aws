@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { useAuthStore } from "@/store/useAuthStore";
 import AuthFormDialog from "./AuthFormDialog";
 import AuthOtpDialog from "./AuthOtpDialog";
-import { User } from "lucide-react";
+import { User, UserCircle, Package, LogOut } from "lucide-react";
 import { Button } from "../ui/button";
 
 import {
@@ -64,18 +64,30 @@ const AuthDialog = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 mt-3.5 mr-10">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Billing</DropdownMenuItem>
-              <DropdownMenuItem>Team</DropdownMenuItem>
-              <DropdownMenuItem>Subscription</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => navigate("/account/profile")}
+                className="cursor-pointer"
+              >
+                <UserCircle className="mr-2 h-4 w-4" />
+                <span>Thông tin cá nhân</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => navigate("/account/orders")}
+                className="cursor-pointer"
+              >
+                <Package className="mr-2 h-4 w-4" />
+                <span>Đơn hàng của tôi</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
                 onClick={handleLogout}
-                className="cursor-pointer"
+                className="cursor-pointer text-red-600 focus:text-red-600"
               >
-                Đăng xuất
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Đăng xuất</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

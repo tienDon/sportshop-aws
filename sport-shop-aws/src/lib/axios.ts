@@ -57,7 +57,7 @@ api.interceptors.response.use(
         console.log("Refresh token failed, clearing auth state");
         useAuthStore.getState().clearState();
         // Redirect to login page nếu cần
-        window.location.href = "/login";
+        // window.location.href = "/login";
         return Promise.reject(refreshError);
       }
     }
