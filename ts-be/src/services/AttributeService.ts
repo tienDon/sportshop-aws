@@ -61,4 +61,38 @@ export class AttributeService {
       where: { id: attributeId },
     });
   }
+
+  static async updateAttribute(
+    attributeId: number,
+    name?: string,
+    code?: string
+  ) {
+    return await prisma.attribute.update({
+      where: { id: attributeId },
+      data: {
+        ...(name && { name }),
+        ...(code && { code }),
+      },
+    });
+  }
+
+  static async updateAttributeValue(
+    valueId: number,
+    value?: string,
+    sortOrder?: number
+  ) {
+    return await prisma.attributeValue.update({
+      where: { id: valueId },
+      data: {
+        ...(value !== undefined && { value }),
+        ...(sortOrder !== undefined && { sortOrder }),
+      },
+    });
+  }
+
+  static async deleteAttributeValue(valueId: number) {
+    return await prisma.attributeValue.delete({
+      where: { id: valueId },
+    });
+  }
 }

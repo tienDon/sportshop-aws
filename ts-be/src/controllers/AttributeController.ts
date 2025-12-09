@@ -153,3 +153,87 @@ export const deleteAttribute = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const updateAttribute = async (req: Request, res: Response) => {
+  try {
+    const { attributeId } = req.params;
+    const { name, code } = req.body;
+    if (!attributeId) {
+      return res.status(400).json({
+        success: false,
+        message: "Attribute ID is required",
+      });
+    }
+    const updatedAttribute = await AttributeService.updateAttribute(
+      parseInt(attributeId),
+      name,
+      code
+    );
+    return res.status(200).json({
+      success: true,
+      message: "Attribute updated successfully",
+      data: updatedAttribute,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error updating attribute",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const updateAttributeValue = async (req: Request, res: Response) => {
+  try {
+    const { valueId } = req.params;
+    const { value, sortOrder } = req.body;
+    if (!valueId) {
+      return res.status(400).json({
+        success: false,
+        message: "Value ID is required",
+      });
+    }
+    const updatedValue = await AttributeService.updateAttributeValue(
+      parseInt(valueId),
+      value,
+      sortOrder
+    );
+    return res.status(200).json({
+      success: true,
+      message: "Attribute value updated successfully",
+      data: updatedValue,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error updating attribute value",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const deleteAttributeValue = async (req: Request, res: Response) => {
+  try {
+    const { valueId } = req.params;
+    if (!valueId) {
+      return res.status(400).json({
+        success: false,
+        message: "Value ID is required",
+      });
+    }
+    const result = await AttributeService.deleteAttributeValue(
+      parseInt(valueId)
+    );
+    return res.status(200).json({
+      success: true,
+      message: "Attribute value deleted successfully",
+      data: result,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error deleting attribute value",
+      error: (error as Error).message,
+    });
+  }
+};

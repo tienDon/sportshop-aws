@@ -148,4 +148,59 @@ export class CategoryService {
       },
     });
   }
+
+  static async updateCategory(
+    id: number,
+    data: {
+      name?: string;
+      slug?: string;
+      parentId?: number | null;
+    }
+  ) {
+    return await prisma.category.update({
+      where: { id },
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.slug && { slug: data.slug }),
+        ...(data.parentId !== undefined && { parentId: data.parentId }),
+      },
+    });
+  }
+
+  static async deleteCategory(id: number) {
+    return await prisma.category.delete({
+      where: { id },
+    });
+  }
+
+  static async getAllCategories() {
+    return await prisma.category.findMany({
+      include: {
+        parent: true,
+        categoryAudiences: {
+          include: {
+            audience: true,
+          },
+        },
+        categoryAttributes: {
+          include: {
+            attribute: true,
+          },
+        },
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+  }
+
+  static async getCategoryAudiences(categoryId: number) {
+    const categoryAudiences = await prisma.categoryAudience.findMany({
+      where: { categoryId },
+      include: {
+        audience: true,
+      },
+    });
+    return categoryAudiences;
+  }
 }

@@ -189,3 +189,83 @@ export const getCategoryAttributes = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const updateCategory = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, slug, parentId } = req.body;
+
+    const category = await CategoryService.updateCategory(Number(id), {
+      name,
+      slug,
+      parentId: parentId ? Number(parentId) : undefined,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+      data: category,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const deleteCategory = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await CategoryService.deleteCategory(Number(id));
+
+    return res.status(200).json({
+      success: true,
+      message: "Category deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getAllCategories = async (req: Request, res: Response) => {
+  try {
+    const categories = await CategoryService.getAllCategories();
+    return res.status(200).json({
+      success: true,
+      message: "Categories fetched successfully",
+      data: categories,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getCategoryAudiences = async (req: Request, res: Response) => {
+  try {
+    const { categoryId } = req.params;
+    const audiences = await CategoryService.getCategoryAudiences(
+      Number(categoryId)
+    );
+    return res.status(200).json({
+      success: true,
+      message: "Category audiences fetched successfully",
+      data: audiences,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
+};

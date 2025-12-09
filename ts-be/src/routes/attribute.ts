@@ -6,6 +6,9 @@ import {
   getAttributesWithValues,
   deleteAllAttributes,
   deleteAttribute,
+  updateAttribute,
+  updateAttributeValue,
+  deleteAttributeValue,
 } from "@/controllers/AttributeController.js";
 import { Router } from "express";
 
@@ -13,12 +16,14 @@ const router = Router();
 
 router.get("/", getAllAttributes);
 router.post("/", createAttribute);
-router.post("/:attributeId/values", createAttributeValues);
-router.get("/:attributeId/values", getAttributeValuesByAttributeId);
-router.delete("/:attributeId", deleteAttribute); // TODO: delete attribute
-router.delete("/", deleteAllAttributes); // TODO: delete all attributes
+router.put("/:attributeId", updateAttribute);
+router.delete("/:attributeId", deleteAttribute);
+router.delete("/", deleteAllAttributes);
 
-// router.get("/:attributeId/values", getAttributeValuesByAttributeId);
+router.get("/:attributeId/values", getAttributeValuesByAttributeId);
+router.post("/:attributeId/values", createAttributeValues);
+router.put("/values/:valueId", updateAttributeValue);
+router.delete("/values/:valueId", deleteAttributeValue);
 
 router.get("/with-values", getAttributesWithValues);
 // [
