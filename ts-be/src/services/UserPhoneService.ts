@@ -106,4 +106,32 @@ export class UserPhoneService {
       where: { id: phoneId },
     });
   }
+
+  static async getUserForAdmin() {
+    return await prisma.user.findMany({
+      where: { role: "CUSTOMER" },
+    });
+  }
+
+  static async updateUserStatus(userId: number) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const isActive = user.isActive;
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { isActive: !isActive },
+    });
+  }
+
+  static async deleteUser(userId: number) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+  }
 }

@@ -53,3 +53,49 @@ export const deletePhone = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const getUserForAdmin = async (req: Request, res: Response) => {
+  try {
+    const users = await UserPhoneService.getUserForAdmin();
+    return res.status(200).json({
+      success: true,
+      message: "Fetch data users for admin successfully",
+      data: users,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
+};
+
+export const updateUserStatus = async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+    // const {isActive} = req.body;
+    const updatedUser = await UserPhoneService.updateUserStatus(userId);
+    return res.status(200).json({
+      success: true,
+      message: "Update user successfully",
+      data: updatedUser,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const deletedUser = await UserPhoneService.deleteUser(userId);
+    return res.status(200).json({
+      success: true,
+      message: "Delete user successfully",
+      data: deletedUser,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
+};

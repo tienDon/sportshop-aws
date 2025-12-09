@@ -11,6 +11,9 @@ import {
   deletePhone,
   getPhones,
   updatePhone,
+  getUserForAdmin,
+  updateUserStatus,
+  deleteUser,
 } from "@/controllers/UserPhoneController.js";
 import { getAllUsers } from "@/controllers/UserController.js";
 
@@ -29,4 +32,8 @@ router.put("/phones/:id", authenticateToken, updatePhone);
 router.delete("/phones/:id", authenticateToken, deletePhone);
 
 router.get("/", getAllUsers);
+
+router.get("/admin", getUserForAdmin);
+router.put("/admin/:id", updateUserStatus);
+router.delete("/admin/:id", deleteUser);
 export default router;
