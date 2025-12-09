@@ -598,6 +598,92 @@ class ProductService {
       })),
     };
   }
+
+  // ============ NEW ADMIN METHODS ============
+
+  static async getAllProductsAdmin() {
+    return await prisma.product.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        brand: true,
+        badge: true,
+        _count: {
+          select: {
+            variants: true,
+          },
+        },
+      },
+    });
+  }
+
+  static async getProductByIdAdmin(id: number) {
+    return await prisma.product.findUnique({
+      where: { id },
+      include: {
+        brand: true,
+        badge: true,
+        productCategories: {
+          include: {
+            category: true,
+          },
+        },
+        productAudiences: {
+          include: {
+            audience: true,
+          },
+        },
+        productSports: {
+          include: {
+            sport: true,
+          },
+        },
+        productAttributeValues: {
+          include: {
+            attributeValue: {
+              include: {
+                attribute: true,
+              },
+            },
+          },
+        },
+        variants: {
+          include: {
+            color: true,
+            size: true,
+          },
+        },
+      },
+    });
+  }
+
+  static async updateProduct(id: number, data: any) {
+    const updateData: any = {};
+
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.slug !== undefined) updateData.slug = data.slug;
+    if (data.brandId !== undefined) updateData.brandId = data.brandId;
+    if (data.basePrice !== undefined) updateData.basePrice = data.basePrice;
+    if (data.mainImageUrl !== undefined)
+      updateData.mainImageUrl = data.mainImageUrl;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.description !== undefined)
+      updateData.description = data.description;
+    if (data.specifications !== undefined)
+      updateData.specifications = data.specifications;
+    if (data.note !== undefined) updateData.note = data.note;
+    if (data.badgeId !== undefined) updateData.badgeId = data.badgeId;
+
+    return await prisma.product.update({
+      where: { id },
+      data: updateData,
+    });
+  }
+
+  static async deleteProduct(id: number) {
+    return await prisma.product.delete({
+      where: { id },
+    });
+  }
 }
 
 export default ProductService;

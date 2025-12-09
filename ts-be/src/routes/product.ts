@@ -12,6 +12,11 @@ import {
   getProductsAudience,
   getProductCategories,
   getProductBySlug,
+  // New Admin APIs
+  getProductById,
+  updateProduct,
+  deleteProduct,
+  getAllProductsAdmin,
 } from "@/controllers/ProductController.js";
 import { Router } from "express";
 
@@ -39,4 +44,11 @@ router.post("/:id/attribute-values", createProductAttributeValue);
 
 router.get("/:id/variants", getProductVarients);
 router.patch("/:id/variants/:variantId", updateProductVariant);
+
+// ============ NEW ADMIN ROUTES ============
+router.get("/admin/all", getAllProductsAdmin);
+router.get("/:id", getProductById);
+router.put("/:id", updateProduct);
+router.delete("/:id", deleteProduct);
+
 export default router;
