@@ -61,20 +61,24 @@ export class CategoryService {
     audienceIds: number[],
     sort_order?: number
   ) {
-    // Xóa các liên kết cũ nếu muốn (optional - tùy logic của bạn, ở đây tôi làm kiểu "thêm mới/ghi đè")
-    // await prisma.categoryAudience.deleteMany({ where: { categoryId } });
+    // Xóa các liên kết cũ trước
+    await prisma.categoryAudience.deleteMany({ where: { categoryId } });
+
+    // Nếu không có audiences nào được chọn, chỉ cần xóa và return
+    if (audienceIds.length === 0) {
+      return { count: 0 };
+    }
 
     // Tạo data cho createMany
     const data = audienceIds.map((audienceId) => ({
       categoryId,
       audienceId,
-      sortOrder: sort_order ?? 0, // Mặc định
+      sortOrder: sort_order ?? 0,
     }));
 
-    // Dùng createMany để insert nhiều dòng cùng lúc (skipDuplicates để tránh lỗi nếu đã tồn tại)
+    // Thêm mới
     return await prisma.categoryAudience.createMany({
       data,
-      skipDuplicates: true,
     });
   }
 
@@ -82,6 +86,14 @@ export class CategoryService {
     categoryId: number,
     attributeIds: number[]
   ) {
+    // Xóa các liên kết cũ trước
+    await prisma.categoryAttribute.deleteMany({ where: { categoryId } });
+
+    // Nếu không có attributes nào được chọn, chỉ cần xóa và return
+    if (attributeIds.length === 0) {
+      return { count: 0 };
+    }
+
     const data = attributeIds.map((attributeId) => ({
       categoryId,
       attributeId,
@@ -89,7 +101,6 @@ export class CategoryService {
 
     return await prisma.categoryAttribute.createMany({
       data,
-      skipDuplicates: true,
     });
   }
 
@@ -157,13 +168,15 @@ export class CategoryService {
       parentId?: number | null;
     }
   ) {
+    const updateData: any = {};
+
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.slug !== undefined) updateData.slug = data.slug;
+    if (data.parentId !== undefined) updateData.parentId = data.parentId;
+
     return await prisma.category.update({
       where: { id },
-      data: {
-        ...(data.name && { name: data.name }),
-        ...(data.slug && { slug: data.slug }),
-        ...(data.parentId !== undefined && { parentId: data.parentId }),
-      },
+      data: updateData,
     });
   }
 

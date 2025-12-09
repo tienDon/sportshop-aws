@@ -198,7 +198,8 @@ export const updateCategory = async (req: Request, res: Response) => {
     const category = await CategoryService.updateCategory(Number(id), {
       name,
       slug,
-      parentId: parentId ? Number(parentId) : undefined,
+      parentId:
+        parentId === null || parentId === undefined ? null : Number(parentId),
     });
 
     return res.status(200).json({
