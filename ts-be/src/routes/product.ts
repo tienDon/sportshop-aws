@@ -17,6 +17,10 @@ import {
   updateProduct,
   deleteProduct,
   getAllProductsAdmin,
+  deleteProductCategory,
+  deleteProductAudience,
+  deleteProductSport,
+  deleteProductAttributeValue,
 } from "@/controllers/ProductController.js";
 import { Router } from "express";
 
@@ -50,5 +54,14 @@ router.get("/admin/all", getAllProductsAdmin);
 router.get("/:id", getProductById);
 router.put("/:id", updateProduct);
 router.delete("/:id", deleteProduct);
+
+// Product Relations Management
+router.delete("/:id/categories/:categoryId", deleteProductCategory);
+router.delete("/:id/audiences/:audienceId", deleteProductAudience);
+router.delete("/:id/sports/:sportId", deleteProductSport);
+router.delete(
+  "/:id/attribute-values/:attributeValueId",
+  deleteProductAttributeValue
+);
 
 export default router;

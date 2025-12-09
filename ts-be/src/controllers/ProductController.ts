@@ -432,3 +432,78 @@ export const getAllProductsAdmin = async (req: Request, res: Response) => {
     });
   }
 };
+
+// ============ PRODUCT RELATIONS MANAGEMENT ============
+export const deleteProductCategory = async (req: Request, res: Response) => {
+  try {
+    const { id, categoryId } = req.params;
+    await ProductService.deleteProductCategory(Number(id), Number(categoryId));
+    return res.status(200).json({
+      success: true,
+      message: "Category removed from product",
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Error removing category",
+      error: error.message,
+    });
+  }
+};
+
+export const deleteProductAudience = async (req: Request, res: Response) => {
+  try {
+    const { id, audienceId } = req.params;
+    await ProductService.deleteProductAudience(Number(id), Number(audienceId));
+    return res.status(200).json({
+      success: true,
+      message: "Audience removed from product",
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Error removing audience",
+      error: error.message,
+    });
+  }
+};
+
+export const deleteProductSport = async (req: Request, res: Response) => {
+  try {
+    const { id, sportId } = req.params;
+    await ProductService.deleteProductSport(Number(id), Number(sportId));
+    return res.status(200).json({
+      success: true,
+      message: "Sport removed from product",
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Error removing sport",
+      error: error.message,
+    });
+  }
+};
+
+export const deleteProductAttributeValue = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id, attributeValueId } = req.params;
+    await ProductService.deleteProductAttributeValue(
+      Number(id),
+      Number(attributeValueId)
+    );
+    return res.status(200).json({
+      success: true,
+      message: "Attribute value removed from product",
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Error removing attribute value",
+      error: error.message,
+    });
+  }
+};

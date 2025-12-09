@@ -684,6 +684,54 @@ class ProductService {
       where: { id },
     });
   }
+
+  // ============ PRODUCT RELATIONS MANAGEMENT ============
+  static async deleteProductCategory(productId: number, categoryId: number) {
+    return await prisma.productCategory.delete({
+      where: {
+        productId_categoryId: {
+          productId,
+          categoryId,
+        },
+      },
+    });
+  }
+
+  static async deleteProductAudience(productId: number, audienceId: number) {
+    return await prisma.productAudience.delete({
+      where: {
+        productId_audienceId: {
+          productId,
+          audienceId,
+        },
+      },
+    });
+  }
+
+  static async deleteProductSport(productId: number, sportId: number) {
+    return await prisma.productSport.delete({
+      where: {
+        productId_sportId: {
+          productId,
+          sportId,
+        },
+      },
+    });
+  }
+
+  static async deleteProductAttributeValue(
+    productId: number,
+    attributeValueId: number
+  ) {
+    return await prisma.productAttributeValue.delete({
+      where: {
+        productId_attributeValueId: {
+          productId,
+          attributeValueId,
+        },
+      },
+    });
+  }
 }
 
 export default ProductService;
