@@ -11,10 +11,10 @@ export class AuthAPI {
   // Request OTP cho signup/signin
   static async requestOtp(
     identifier: string,
-    full_name?: string
+    name?: string
   ): Promise<RequestOtpResponse> {
-    const payload: { identifier: string; full_name?: string } = { identifier };
-    if (full_name) payload.full_name = full_name;
+    const payload: { identifier: string; name?: string } = { identifier };
+    if (name) payload.name = name;
 
     const response = await api.post("/api/auth/request-otp", payload);
     return response.data;

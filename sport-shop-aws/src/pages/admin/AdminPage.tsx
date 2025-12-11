@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Layout Components
@@ -13,6 +14,8 @@ import { ChatWindow } from "@/features/admin/chat/components/ChatWindow";
 import { ImagePreviewModal } from "@/features/admin/chat/components/ImagePreviewModal";
 
 export default function AdminDashboard() {
+  const location = useLocation();
+
   // State: Tab chính (System vs Chat)
   const [activePrimary, setActivePrimary] = useState<"system" | "chat">(
     "system"
@@ -20,6 +23,34 @@ export default function AdminDashboard() {
 
   // State: Mục được chọn
   const [selectedMenu, setSelectedMenu] = useState("dashboard");
+
+  // Update selectedMenu based on URL
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.startsWith("/admin/products")) {
+      setSelectedMenu("products");
+    } else if (path.startsWith("/admin/orders")) {
+      setSelectedMenu("orders");
+    } else if (path.startsWith("/admin/users")) {
+      setSelectedMenu("users");
+    } else if (path.startsWith("/admin/categories")) {
+      setSelectedMenu("categories");
+    } else if (path.startsWith("/admin/brands")) {
+      setSelectedMenu("brands");
+    } else if (path.startsWith("/admin/sports")) {
+      setSelectedMenu("sports");
+    } else if (path.startsWith("/admin/audiences")) {
+      setSelectedMenu("audiences");
+    } else if (path.startsWith("/admin/attributes")) {
+      setSelectedMenu("attributes");
+    } else if (path.startsWith("/admin/colors")) {
+      setSelectedMenu("colors");
+    } else if (path.startsWith("/admin/sizes")) {
+      setSelectedMenu("sizes");
+    } else if (path === "/admin" || path === "/admin/") {
+      setSelectedMenu("dashboard");
+    }
+  }, [location.pathname]);
 
   // Chat Hook
   const {

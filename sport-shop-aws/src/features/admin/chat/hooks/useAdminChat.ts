@@ -28,7 +28,9 @@ export function useAdminChat() {
   const loadRooms = async (isInitial = false) => {
     if (!user?._id) return;
     try {
+      console.log("🔄 Fetching admin rooms...");
       const res = await chatRoomApi.getAdminRooms();
+      console.log("✅ Admin rooms fetched:", res.data);
       setRooms(() => {
         const list = res.data.map((r) => {
           let hasUnread = false;
@@ -74,7 +76,7 @@ export function useAdminChat() {
         return list;
       });
     } catch (err) {
-      console.error("loadRooms error:", err);
+      console.error("❌ loadRooms error:", err);
     }
   };
 
@@ -93,11 +95,38 @@ export function useAdminChat() {
     ws.connect(
       () => {
         if (!newRoomSubRef.current) {
-          newRoomSubRef.current = ws.subscribeNewRoom((room) => {
+          newRoomSubRef.current = ws.subscribeNewRoom((room: any) => {
             setRooms((prev) => {
               const exists = prev.find((r) => r.id === room.id);
               if (exists) return prev;
-              return [room, ...prev];
+
+              let hasUnread = true;
+              if (user._id) {
+                const key = getLastReadKey(Number(user._id), room.id);
+                const stored = localStorage.getItem(key);
+                if (stored && room.lastMessageAt) {
+                  try {
+                    if (new Date(room.lastMessageAt) <= new Date(stored)) {
+                      hasUnread = false;
+                    }
+                  } catch {
+                    /* ignore */
+                  }
+                }
+              }
+
+              const updated = [{ ...room, hasUnread }, ...prev];
+              updated.sort((a, b) => {
+                if (!a.lastMessageAt && !b.lastMessageAt) return 0;
+                if (!a.lastMessageAt) return 1;
+                if (!b.lastMessageAt) return -1;
+                return (
+                  new Date(b.lastMessageAt!).getTime() -
+                  new Date(a.lastMessageAt!).getTime()
+                );
+              });
+
+              return updated;
             });
           });
         }
@@ -106,7 +135,14 @@ export function useAdminChat() {
     );
 
     return () => {
-      // Cleanup if needed
+      if (newRoomSubRef.current) {
+        try {
+          newRoomSubRef.current.unsubscribe();
+        } catch (e) {
+          console.error(e);
+        }
+        newRoomSubRef.current = null;
+      }
     };
   }, [user?._id]);
 
@@ -127,10 +163,15 @@ export function useAdminChat() {
 
     const fetchMessages = async () => {
       try {
+        console.log(`🔄 Fetching messages for room ${selectedRoomId}...`);
         const res = await chatApi.getMessages(selectedRoomId);
+        console.log(
+          `✅ Messages fetched for room ${selectedRoomId}:`,
+          res.data
+        );
         setMessages(res.data);
       } catch (err) {
-        console.error(err);
+        console.error("❌ fetchMessages error:", err);
       }
     };
 
@@ -141,13 +182,34 @@ export function useAdminChat() {
       subscriptionRef.current.unsubscribe();
     }
 
-    subscriptionRef.current = ws.subscribeRoom(selectedRoomId, (msg) => {
+    subscriptionRef.current = ws.subscribeRoom(selectedRoomId, (msg: any) => {
       setMessages((prev) => [...prev, msg]);
 
       // Update last read time when receiving new message while in room
       if (selectedRoomRef.current === selectedRoomId) {
         localStorage.setItem(key, new Date().toISOString());
       }
+
+      // Update room list (lastMessageAt + sort)
+      setRooms((oldRooms) => {
+        const updated = oldRooms.map((r) =>
+          r.id === selectedRoomId
+            ? { ...r, lastMessageAt: msg.sentAt, hasUnread: false }
+            : r
+        );
+
+        updated.sort((a, b) => {
+          if (!a.lastMessageAt && !b.lastMessageAt) return 0;
+          if (!a.lastMessageAt) return 1;
+          if (!b.lastMessageAt) return -1;
+          return (
+            new Date(b.lastMessageAt!).getTime() -
+            new Date(a.lastMessageAt!).getTime()
+          );
+        });
+
+        return updated;
+      });
     });
 
     return () => {
@@ -158,35 +220,48 @@ export function useAdminChat() {
     };
   }, [selectedRoomId, user?._id]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!selectedRoomId) return;
 
-    if (text.trim().length > 0) {
+    // TEXT ONLY
+    if (text.trim().length > 0 && !pendingFile) {
       const payload = {
         content: text,
-        type: "TEXT",
-        sender: "ADMIN",
+        fileUrl: null,
+        contentType: "TEXT",
       };
       ws.sendMessage(selectedRoomId, payload);
       setText("");
+
+      if (user?._id) {
+        const key = getLastReadKey(Number(user._id), selectedRoomId);
+        localStorage.setItem(key, new Date().toISOString());
+      }
+      return;
     }
 
+    // FILE ONLY
     if (pendingFile) {
-      chatApi
-        .uploadFile(pendingFile)
-        .then((res) => {
-          const fileUrl = res.data; // BE returns string url
-          const type = pendingFile.type.startsWith("image/") ? "IMAGE" : "FILE";
-          const payload = {
-            content: pendingFile.name,
-            type,
-            fileUrl,
-            sender: "ADMIN",
-          };
-          ws.sendMessage(selectedRoomId, payload);
-          setPendingFile(null);
-        })
-        .catch((err) => console.error("Upload error:", err));
+      try {
+        const res = await chatApi.uploadFile(pendingFile);
+        // Assuming BE returns { url, contentType } like in chat-test
+        const { url, contentType } = res.data as any;
+
+        const payload = {
+          content: null,
+          fileUrl: url,
+          contentType,
+        };
+        ws.sendMessage(selectedRoomId, payload);
+        setPendingFile(null);
+
+        if (user?._id) {
+          const key = getLastReadKey(Number(user._id), selectedRoomId);
+          localStorage.setItem(key, new Date().toISOString());
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+      }
     }
   };
 

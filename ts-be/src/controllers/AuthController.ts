@@ -5,7 +5,7 @@ import OTPService from "../services/OTPService.js";
 
 export const requestOtp = async (req: Request, res: Response) => {
   try {
-    const { identifier, full_name } = req.body;
+    const { identifier, fullName } = req.body;
 
     // Validation
     if (!identifier) {
@@ -40,8 +40,8 @@ export const requestOtp = async (req: Request, res: Response) => {
 
     // Validate name cho signup
     if (
-      full_name &&
-      (full_name.trim().length < 2 || full_name.trim().length > 50)
+      fullName &&
+      (fullName.trim().length < 2 || fullName.trim().length > 50)
     ) {
       res.status(400).json({
         success: false,
@@ -50,7 +50,7 @@ export const requestOtp = async (req: Request, res: Response) => {
       return;
     }
 
-    const result = await AuthService.requestOTP({ identifier, full_name });
+    const result = await AuthService.requestOTP({ identifier, fullName });
 
     if (result.success) {
       res.status(200).json(result);

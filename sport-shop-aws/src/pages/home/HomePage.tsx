@@ -1,23 +1,40 @@
 import HeroBanner from "@/components/home/HeroBanner";
 import FavoriteBrands from "@/components/home/FavoriteBrands";
 import ProductsByBrand from "@/components/home/ProductsByBrand";
+import FeaturedCategories from "@/components/home/FeaturedCategories";
+import ShopBySport from "@/components/home/ShopBySport";
+import ShopByAudience from "@/components/home/ShopByAudience";
+import NewArrivals from "@/components/home/NewArrivals";
+import PromoBanner from "@/components/home/PromoBanner";
 import Container from "@/components/ui/Container";
 
 const HomePage = () => {
   return (
-    <div className="h-[400vh]">
-      {/* <div className="min-h-screen"> */}
-      
+    <div className="min-h-screen">
       <HeroBanner />
 
-      {/* <HeroBanner /> */}
       <Container>
+        {/* Promo Banner và Features */}
+        <PromoBanner />
+
+        {/* Thương hiệu yêu thích */}
         <FavoriteBrands />
 
-        <ProductsByBrand />
-      </Container>
+        {/* Sản phẩm mới nhất */}
+        {/* <NewArrivals /> */}
 
-      <div className="bg-amber-200 h-full"></div>
+        {/* Mua sắm theo đối tượng */}
+        {/* <ShopByAudience /> */}
+
+        {/* Sản phẩm theo thương hiệu */}
+        <ProductsByBrand />
+
+        {/* Danh mục sản phẩm */}
+        {/* <FeaturedCategories /> */}
+
+        {/* Mua sắm theo môn thể thao */}
+        {/* <ShopBySport /> */}
+      </Container>
     </div>
   );
 };

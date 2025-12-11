@@ -277,7 +277,8 @@ class ProductService {
     sizeId: number,
     price: number,
     stockQuantity: number,
-    sku?: string
+    sku?: string,
+    imageUrls: string[] = []
   ) {
     // Kiểm tra product có tồn tại không
     const product = await prisma.product.findUnique({
@@ -308,6 +309,7 @@ class ProductService {
         stockQuantity,
         sku,
         productId,
+        imageUrls,
       },
     });
     return newVariant;

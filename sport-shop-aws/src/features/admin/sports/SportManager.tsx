@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sportApi } from "@/services/sportApi";
 import type { Sport, CreateSportDTO } from "@/services/sportApi";
+import { generateSlug } from "@/utils/slugify";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -243,6 +244,10 @@ export function SportManager() {
                 id="name"
                 placeholder="Ví dụ: Bóng đá"
                 {...register("name", { required: "Tên là bắt buộc" })}
+                onChange={(e) => {
+                  setValue("name", e.target.value);
+                  setValue("slug", generateSlug(e.target.value));
+                }}
               />
               {errors.name && (
                 <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -255,6 +260,8 @@ export function SportManager() {
                 id="slug"
                 placeholder="Ví dụ: bong-da"
                 {...register("slug", { required: "Slug là bắt buộc" })}
+                readOnly
+                className="bg-muted"
               />
               {errors.slug && (
                 <p className="text-sm text-red-500">{errors.slug.message}</p>

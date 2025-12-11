@@ -27,10 +27,20 @@ const Header = () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+  useEffect(() => {
+    if (isSticky) {
+      document.body.classList.add("no-horizontal-scroll");
+    } else {
+      document.body.classList.remove("no-horizontal-scroll");
+    }
+    return () => {
+      document.body.classList.remove("no-horizontal-scroll");
+    };
+  }, [isSticky]);
 
   return (
     <>
-      <header className="relative">
+      <header className="relative ">
         {/* Top Banner - Miễn phí vận chuyển */}
         <div ref={topBannerRef}>
           <TopBanner />

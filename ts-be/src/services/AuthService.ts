@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 
 interface RequestOTPData {
   identifier: string;
-  full_name?: string;
+  fullName?: string;
 }
 
 interface VerifyOTPData {
@@ -20,9 +20,9 @@ class AuthService {
   static async requestOTP(data: RequestOTPData) {
     try {
       console.log("🔍 AuthService.requestOTP started with data:", data);
-      const { identifier, full_name } = data;
+      const { identifier, fullName } = data;
 
-      if (full_name) {
+      if (fullName) {
         // SIGNUP: Tạo user mới
         console.log("📝 Processing SIGNUP for:", identifier);
 
@@ -53,7 +53,7 @@ class AuthService {
         }
 
         const userData: any = {
-          full_name,
+          full_name: fullName,
           email: identifier,
         };
 

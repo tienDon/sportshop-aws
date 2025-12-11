@@ -152,7 +152,7 @@ export const createProductSport = async (req: Request, res: Response) => {
 export const createProductVariant = async (req: Request, res: Response) => {
   try {
     const productId = req.params.id;
-    const { colorId, sizeId, price, stockQuantity, sku } = req.body;
+    const { colorId, sizeId, price, stockQuantity, sku, imageUrls } = req.body;
     if (
       !colorId ||
       !sizeId ||
@@ -171,7 +171,8 @@ export const createProductVariant = async (req: Request, res: Response) => {
       Number(sizeId),
       Number(price),
       Number(stockQuantity),
-      sku
+      sku,
+      imageUrls
     );
     res.status(200).json({
       success: true,

@@ -5,116 +5,335 @@ import ws from "@/services/ws.service";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export function useCustomerChat() {
-  const { user, accessToken } = useAuthStore();
-  const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuthStore();
+
+  console.log("🔍 [Customer] useCustomerChat hook - user from store:", user);
+  console.log("🔍 [Customer] user?.id:", user?.id);
+  console.log("🔍 [Customer] Full user object:", JSON.stringify(user, null, 2));
+
+  const [showChat, setShowChat] = useState(false);
   const [roomId, setRoomId] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [text, setText] = useState("");
+  const [hasUnread, setHasUnread] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
 
-  const subscriptionRef = useRef<any>(null);
+  const chatOpenRef = useRef(false);
+  const roomIdRef = useRef<number | null>(null);
+  const userIdRef = useRef<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const getLastReadKey = (uid: number, rid: number) =>
+    `customer_last_read_${uid}_${rid}`;
+
+  // Sync userIdRef
+  useEffect(() => {
+    console.log(
+      "🔄 [Customer] Syncing userIdRef. user:",
+      user,
+      "user?.id:",
+      user?.id
+    );
+    if (user?.id) {
+      userIdRef.current = Number(user.id);
+      console.log("✅ [Customer] userIdRef set to:", userIdRef.current);
+    } else {
+      userIdRef.current = null;
+      console.log("⚠️ [Customer] userIdRef set to null (no user)");
+    }
+  }, [user]);
+
+  // Sync chatOpenRef
+  useEffect(() => {
+    chatOpenRef.current = showChat;
+  }, [showChat]);
+
+  // Sync roomIdRef
+  useEffect(() => {
+    roomIdRef.current = roomId;
+  }, [roomId]);
 
   // Scroll to bottom
   useEffect(() => {
-    if (isOpen) {
+    if (showChat) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isOpen]);
+  }, [messages, showChat]);
 
-  // Initialize chat (fetch room)
+  // Init logic (check room, unread)
   useEffect(() => {
-    if (!user || !accessToken) return;
+    const init = async () => {
+      if (!userIdRef.current) return;
 
-    const initChat = async () => {
       try {
+        console.log(
+          "🚀 [Customer] Initializing chat for user:",
+          userIdRef.current
+        );
         const res = await chatRoomApi.getMyRooms();
-        // Assuming res.data is an array of rooms or a single room object depending on backend
-        // Based on useAdminChat, getAdminRooms returns ChatRoom[]
-        // Let's assume getMyRooms returns ChatRoom[] too.
-        const rooms = Array.isArray(res.data) ? res.data : [res.data];
+        console.log("📦 [Customer] getMyRooms response:", res.data);
 
-        if (rooms.length > 0 && rooms[0]) {
-          const room = rooms[0];
-          setRoomId(room.id);
-          // Fetch messages
-          const msgRes = await chatApi.getMessages(room.id);
-          setMessages(msgRes.data);
-        } else {
-          // Create room if none exists
-          try {
-            const newRoomRes = await chatRoomApi.createRoom({
-              customerName: user.full_name || user.email || "Customer",
-            });
-            if (newRoomRes.data) {
-              setRoomId(newRoomRes.data.id);
+        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+          const r = res.data[0];
+          setRoomId(r.id);
+          roomIdRef.current = r.id;
+          console.log("✅ [Customer] Room found and set:", r.id);
+
+          sessionStorage.setItem(
+            `customerRoomId_${userIdRef.current}`,
+            String(r.id)
+          );
+
+          let unread = false;
+          if (r.lastMessageAt) {
+            const key = getLastReadKey(userIdRef.current, r.id);
+            const stored = localStorage.getItem(key);
+            if (!stored) {
+              unread = true;
+            } else {
+              try {
+                const lastRead = new Date(stored);
+                const lastMsg = new Date(r.lastMessageAt);
+                if (lastMsg > lastRead) {
+                  unread = true;
+                }
+              } catch {
+                unread = true;
+              }
             }
-          } catch (createErr) {
-            console.error("Failed to create room", createErr);
           }
+          setHasUnread(unread);
+          console.log("🔔 [Customer] hasUnread:", unread);
+        } else {
+          console.log("ℹ️ [Customer] No existing rooms found");
         }
       } catch (err) {
-        console.error("Failed to init chat", err);
+        console.error("❌ [Customer] init customer chat error:", err);
       }
     };
 
-    initChat();
-  }, [user, accessToken]);
+    if (user?.id) {
+      init();
+    }
+  }, [user]);
 
-  // Connect WS and Subscribe
-  useEffect(() => {
-    if (!user || !roomId) return;
+  const onMessage = (msg: any) => {
+    console.log("📩 Received WS message:", msg);
+    setMessages((old) => {
+      const newMsg = {
+        ...msg,
+        isMine: msg.senderId === userIdRef.current,
+      };
+      console.log("✨ Adding message to state:", newMsg);
+      return [...old, newMsg];
+    });
 
-    ws.connect(
-      () => {
-        setIsConnecting(false);
-        if (subscriptionRef.current) subscriptionRef.current.unsubscribe();
-
-        subscriptionRef.current = ws.subscribeRoom(roomId, (msg) => {
-          setMessages((prev) => [...prev, msg]);
-          if (!isOpen) {
-            setUnreadCount((prev) => prev + 1);
-          }
-        });
-      },
-      (err) => {
-        console.error("WS Error", err);
-        setIsConnecting(false);
+    if (!chatOpenRef.current) {
+      setHasUnread(true);
+    } else {
+      if (userIdRef.current && roomIdRef.current && msg.sentAt) {
+        const key = getLastReadKey(userIdRef.current, roomIdRef.current);
+        localStorage.setItem(key, msg.sentAt);
       }
-    );
-
-    return () => {
-      if (subscriptionRef.current) subscriptionRef.current.unsubscribe();
-    };
-  }, [roomId, user]);
-
-  const handleSend = async () => {
-    if (!input.trim() || !roomId) return;
-
-    const payload = {
-      content: input,
-      type: "TEXT",
-      sender: "CUSTOMER",
-    };
-
-    ws.sendMessage(roomId, payload);
-    setInput("");
+    }
   };
 
-  const toggleChat = () => {
-    setIsOpen(!isOpen);
-    if (!isOpen) setUnreadCount(0);
+  const loadMessages = async (rid: number) => {
+    try {
+      console.log(`🔄 [Customer] Fetching messages for room ${rid}...`);
+      const res = await chatApi.getMessages(rid);
+      console.log(`✅ [Customer] Messages fetched for room ${rid}:`, res.data);
+      const mapped = res.data.map((m) => ({
+        ...m,
+        isMine: m.senderId === userIdRef.current,
+      }));
+      console.log("✨ [Customer] Mapped messages with isMine:", mapped);
+      setMessages(mapped);
+      return mapped;
+    } catch (err: any) {
+      console.error("❌ [Customer] loadMessages error:", err);
+      const status = err.response?.status;
+      if (status === 403 || status === 404) {
+        throw new Error("ROOM_NOT_FOUND");
+      }
+      throw err;
+    }
+  };
+
+  const connectWsForRoom = (rid: number) => {
+    console.log(
+      "🔌 [Customer] connectWsForRoom called for room:",
+      rid,
+      "wsConnected:",
+      wsConnected
+    );
+    if (!wsConnected) {
+      ws.connect(
+        () => {
+          console.log("✅ [Customer] WebSocket connected successfully");
+          setWsConnected(true);
+          if (ws.unsubscribeAll) {
+            ws.unsubscribeAll();
+          }
+          console.log("📡 [Customer] Subscribing to room:", rid);
+          ws.subscribeRoom(rid, onMessage);
+        },
+        (err) => {
+          console.error("❌ [Customer] WS connect error:", err);
+        }
+      );
+    } else {
+      console.log(
+        "♻️ [Customer] Already connected, resubscribing to room:",
+        rid
+      );
+      if (ws.unsubscribeAll) {
+        ws.unsubscribeAll();
+      }
+      ws.subscribeRoom(rid, onMessage);
+    }
+  };
+
+  const ensureRoomAndConnect = async () => {
+    const currentUserId = userIdRef.current;
+    const storageKey =
+      currentUserId != null ? `customerRoomId_${currentUserId}` : null;
+
+    console.log(
+      "🔧 [Customer] ensureRoomAndConnect started. userId:",
+      currentUserId
+    );
+
+    try {
+      let rid = roomIdRef.current;
+      console.log("🔍 [Customer] Current roomId from ref:", rid);
+
+      // 1. Get from sessionStorage
+      if (!rid && storageKey) {
+        const saved = sessionStorage.getItem(storageKey);
+        if (saved) {
+          rid = Number(saved);
+          console.log(
+            "♻️ [Customer] Recovered roomId from sessionStorage:",
+            rid
+          );
+        }
+      }
+
+      let msgs: any[] = [];
+
+      // 2. Try load messages
+      if (rid) {
+        try {
+          msgs = await loadMessages(rid);
+        } catch (e: any) {
+          if (e.message === "ROOM_NOT_FOUND") {
+            console.log("🗑️ [Customer] Room not found, will create new one");
+            rid = null;
+            setRoomId(null);
+            roomIdRef.current = null;
+            if (storageKey) {
+              sessionStorage.removeItem(storageKey);
+            }
+          } else {
+            throw e;
+          }
+        }
+      }
+
+      // 3. Create room if needed
+      if (!rid) {
+        console.log("🆕 [Customer] Creating new room...");
+        const res = await chatRoomApi.createRoom({ adminId: 1 });
+        rid = res.data.id;
+        console.log("✅ [Customer] New room created with id:", rid);
+
+        if (storageKey) {
+          sessionStorage.setItem(storageKey, String(rid));
+        }
+        msgs = await loadMessages(rid);
+      }
+
+      // 4. Update state
+      setRoomId(rid);
+      roomIdRef.current = rid;
+      console.log("💾 [Customer] Room set in state and ref:", rid);
+
+      if (currentUserId && msgs.length > 0) {
+        const lastMsg = msgs[msgs.length - 1];
+        if (lastMsg.sentAt) {
+          const key = getLastReadKey(currentUserId, rid!);
+          localStorage.setItem(key, lastMsg.sentAt);
+        }
+      }
+
+      setHasUnread(false);
+      if (rid) {
+        console.log("🔌 [Customer] Connecting WebSocket for room:", rid);
+        connectWsForRoom(rid);
+      }
+    } catch (err) {
+      console.error("❌ [Customer] ensureRoomAndConnect error:", err);
+    }
+  };
+
+  const handleSend = () => {
+    if (!roomIdRef.current || !text.trim()) return;
+
+    const payload = {
+      content: text,
+      fileUrl: null,
+      contentType: "TEXT",
+    };
+
+    console.log("🚀 Sending message:", payload, "to room:", roomIdRef.current);
+    ws.sendMessage(roomIdRef.current, payload);
+    setText("");
+
+    if (userIdRef.current) {
+      const key = getLastReadKey(userIdRef.current, roomIdRef.current);
+      localStorage.setItem(key, new Date().toISOString());
+    }
+  };
+
+  const toggleChat = async () => {
+    if (!showChat) {
+      console.log(
+        "🎯 [Customer] toggleChat - opening chat. Current userId:",
+        userIdRef.current,
+        "user.id:",
+        user?.id
+      );
+
+      // Ensure userIdRef is set before proceeding
+      if (!userIdRef.current && user?.id) {
+        userIdRef.current = Number(user.id);
+        console.log(
+          "🔧 [Customer] Set userIdRef from user.id:",
+          userIdRef.current
+        );
+      }
+
+      if (!userIdRef.current) {
+        console.error("❌ [Customer] Cannot open chat - user not logged in");
+        return;
+      }
+
+      setShowChat(true);
+      await ensureRoomAndConnect();
+    } else {
+      setShowChat(false);
+    }
   };
 
   return {
-    isOpen,
+    isOpen: showChat,
     toggleChat,
     messages,
-    input,
-    setInput,
+    input: text,
+    setInput: setText,
     handleSend,
-    unreadCount,
+    unreadCount: hasUnread ? 1 : 0,
     messagesEndRef,
     user,
     isLoggedIn: !!user,

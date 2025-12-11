@@ -98,7 +98,10 @@ const ProfilePage = () => {
             <div>
               <Label>Họ tên</Label>
               <div className="p-2 bg-gray-50 rounded border mt-1">
-                {user?.full_name || "Chưa cập nhật"}
+                {user?.name ||
+                  user?.full_name ||
+                  user?.fullName ||
+                  "Chưa cập nhật"}
               </div>
             </div>
           </div>
