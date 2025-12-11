@@ -2,7 +2,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    "http://Sportshop-backend-env.eba-rmvficqm.ap-southeast-1.elasticbeanstalk.com",
   withCredentials: true, // Quan trọng cho cookies
 });
 

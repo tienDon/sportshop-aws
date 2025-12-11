@@ -39,6 +39,10 @@ export const useAuthStore = create<AuthState>()(
         });
 
         try {
+          // ⭐ THÊM 2 DÒNG NÀY
+          sessionStorage.removeItem("token");
+          sessionStorage.removeItem("userId");
+
           localStorage.removeItem("auth-storage");
           Object.keys(localStorage).forEach((key) => {
             if (key.startsWith("auth")) {
@@ -58,11 +62,11 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true });
 
         try {
-          const payload: { identifier: string; full_name?: string } = {
+          const payload: { identifier: string; name?: string } = {
             identifier,
           };
           if (full_name) {
-            payload.full_name = full_name;
+            payload.name = full_name;
           }
 
           const res = await api.post("/api/auth/request-otp", payload);
@@ -118,6 +122,21 @@ export const useAuthStore = create<AuthState>()(
               currentIdentifier: null,
               otpExpiresAt: null,
             });
+
+            // ⭐ GHI CHO WEBSOCKET XÀI
+            try {
+              // tuỳ BE trả field id nào, mình bắt lần lượt
+              const userAny: any = data.user;
+              const userId =
+                userAny.id ?? userAny.userId ?? userAny.user_id ?? null;
+
+              sessionStorage.setItem("token", data.accessToken);
+              if (userId != null) {
+                sessionStorage.setItem("userId", String(userId));
+              }
+            } catch (e) {
+              console.error("Cannot write sessionStorage for chat:", e);
+            }
 
             toast.success("Xác thực thành công!");
           }
@@ -175,6 +194,13 @@ export const useAuthStore = create<AuthState>()(
 
           if (res.data.success && res.data.accessToken) {
             set({ accessToken: res.data.accessToken });
+
+            // ⭐ Cập nhật luôn token cho WebSocket
+            try {
+              sessionStorage.setItem("token", res.data.accessToken);
+            } catch (e) {
+              console.error("Cannot write sessionStorage token:", e);
+            }
           } else {
             throw new Error("Refresh token failed");
           }

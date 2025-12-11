@@ -4,6 +4,45 @@ import type { ChatRoom, ChatMessage } from "@/services/chat.service";
 import ws from "@/services/ws.service";
 import { useAuthStore } from "@/store/useAuthStore";
 
+// Map raw message từ BE (ChatMessageResponse) -> ChatMessage dùng cho UI
+const mapToAdminMessage = (
+  raw: any,
+  currentUserId?: number | string | null
+): ChatMessage => {
+  const myId =
+    currentUserId !== undefined && currentUserId !== null
+      ? Number(currentUserId)
+      : undefined;
+
+  // Xác định type TEXT / IMAGE / FILE dựa vào fileUrl + contentType
+  let type: ChatMessage["type"] = "TEXT";
+  if (raw.fileUrl) {
+    const ct = (raw.contentType || "").toString().toUpperCase();
+    if (ct.includes("IMAGE")) {
+      type = "IMAGE";
+    } else {
+      type = "FILE";
+    }
+  }
+
+  // Xác định sender là ADMIN hay CUSTOMER
+  const sender: ChatMessage["sender"] =
+    myId !== undefined && raw.senderId !== undefined && raw.senderId !== null
+      ? Number(raw.senderId) === myId
+        ? "ADMIN"
+        : "CUSTOMER"
+      : "CUSTOMER";
+
+  return {
+    id: raw.messageId ?? raw.id ?? Date.now(),
+    sender,
+    type,
+    content: raw.content ?? "",
+    fileUrl: raw.fileUrl ?? null,
+    sentAt: raw.sentAt ?? new Date().toISOString(),
+  } as ChatMessage;
+};
+
 export function useAdminChat() {
   const { user } = useAuthStore();
 
@@ -27,75 +66,50 @@ export function useAdminChat() {
 
   const loadRooms = async (isInitial = false) => {
     if (!user?._id) return;
+
     try {
       const res = await chatRoomApi.getAdminRooms();
-      setRooms(() => {
-        const list = res.data.map((r) => {
-          let hasUnread = false;
+      const rawRooms: ChatRoom[] = res.data || [];
 
-          if (user._id) {
-            const key = getLastReadKey(Number(user._id), r.id);
-            const stored = localStorage.getItem(key);
+      // Đánh dấu hasUnread dựa trên lastMessageAt + last_read trong localStorage
+      const mapped = rawRooms.map((r) => {
+        const key = getLastReadKey(Number(user._id), r.id);
+        const lastRead = localStorage.getItem(key);
+        let hasUnread = false;
 
-            if (r.lastMessageAt) {
-              if (!stored) {
-                hasUnread = true;
-              } else {
-                try {
-                  const lastRead = new Date(stored);
-                  const lastMsg = new Date(r.lastMessageAt);
-                  if (lastMsg > lastRead) {
-                    hasUnread = true;
-                  }
-                } catch {
-                  hasUnread = true;
-                }
-              }
-            }
-          }
+        if (r.lastMessageAt && lastRead) {
+          hasUnread = new Date(r.lastMessageAt) > new Date(lastRead);
+        } else if (r.lastMessageAt && !lastRead) {
+          hasUnread = true;
+        }
 
-          if (r.id === selectedRoomRef.current) {
-            hasUnread = false;
-          }
-
-          return { ...r, hasUnread };
-        });
-
-        list.sort((a, b) => {
-          if (!a.lastMessageAt && !b.lastMessageAt) return 0;
-          if (!a.lastMessageAt) return 1;
-          if (!b.lastMessageAt) return -1;
-          return (
-            new Date(b.lastMessageAt!).getTime() -
-            new Date(a.lastMessageAt!).getTime()
-          );
-        });
-
-        return list;
+        return { ...r, hasUnread };
       });
+
+      setRooms(mapped);
+
+      // Lần đầu load, auto chọn phòng đầu
+      if (isInitial && mapped.length > 0 && !selectedRoomId) {
+        setSelectedRoomId(mapped[0].id);
+      }
     } catch (err) {
-      console.error("loadRooms error:", err);
+      console.error("Failed to load rooms", err);
     }
   };
 
-  // Load rooms & polling
+  // Lần đầu: load rooms + connect WS để nhận room mới
   useEffect(() => {
     if (!user?._id) return;
-    loadRooms(true);
-    const interval = setInterval(() => loadRooms(false), 5000);
-    return () => clearInterval(interval);
-  }, [user?._id]);
 
-  // WebSocket: Listen for new rooms
-  useEffect(() => {
-    if (!user?._id) return;
+    loadRooms(true);
 
     ws.connect(
       () => {
-        if (!newRoomSubRef.current) {
-          newRoomSubRef.current = ws.subscribeNewRoom((room) => {
+        // subscribe topic room mới cho admin nếu BE có
+        if (!newRoomSubRef.current && ws.subscribeAdminRoomUpdated) {
+          newRoomSubRef.current = ws.subscribeAdminRoomUpdated((room: any) => {
             setRooms((prev) => {
-              const exists = prev.find((r) => r.id === room.id);
+              const exists = prev.some((r) => r.id === room.id);
               if (exists) return prev;
               return [room, ...prev];
             });
@@ -106,11 +120,11 @@ export function useAdminChat() {
     );
 
     return () => {
-      // Cleanup if needed
+      // có thể cleanup thêm nếu cần
     };
   }, [user?._id]);
 
-  // Load messages when room selected
+  // Load messages khi chọn room
   useEffect(() => {
     if (!selectedRoomId || !user?._id) return;
 
@@ -118,7 +132,7 @@ export function useAdminChat() {
     const key = getLastReadKey(Number(user._id), selectedRoomId);
     localStorage.setItem(key, new Date().toISOString());
 
-    // Update local state to remove unread dot
+    // Update local state để clear chấm đỏ
     setRooms((prev) =>
       prev.map((r) =>
         r.id === selectedRoomId ? { ...r, hasUnread: false } : r
@@ -128,7 +142,11 @@ export function useAdminChat() {
     const fetchMessages = async () => {
       try {
         const res = await chatApi.getMessages(selectedRoomId);
-        setMessages(res.data);
+        const rawMessages = res.data || [];
+        const mapped = rawMessages.map((m: any) =>
+          mapToAdminMessage(m, user?._id)
+        );
+        setMessages(mapped);
       } catch (err) {
         console.error(err);
       }
@@ -136,19 +154,23 @@ export function useAdminChat() {
 
     fetchMessages();
 
-    // Subscribe to room messages
+    // Subscribe vào room
     if (subscriptionRef.current) {
       subscriptionRef.current.unsubscribe();
     }
 
-    subscriptionRef.current = ws.subscribeRoom(selectedRoomId, (msg) => {
-      setMessages((prev) => [...prev, msg]);
+    subscriptionRef.current = ws.subscribeRoom(
+      selectedRoomId,
+      (rawMsg: any) => {
+        const mapped = mapToAdminMessage(rawMsg, user?._id);
+        setMessages((prev) => [...prev, mapped]);
 
-      // Update last read time when receiving new message while in room
-      if (selectedRoomRef.current === selectedRoomId) {
-        localStorage.setItem(key, new Date().toISOString());
+        // Cập nhật last read nếu đang đứng ở room này
+        if (selectedRoomRef.current === selectedRoomId) {
+          localStorage.setItem(key, new Date().toISOString());
+        }
       }
-    });
+    );
 
     return () => {
       if (subscriptionRef.current) {
@@ -158,35 +180,33 @@ export function useAdminChat() {
     };
   }, [selectedRoomId, user?._id]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!selectedRoomId) return;
 
+    // Gửi TEXT
     if (text.trim().length > 0) {
-      const payload = {
-        content: text,
-        type: "TEXT",
-        sender: "ADMIN",
-      };
-      ws.sendMessage(selectedRoomId, payload);
+      // ws.service đã lo wrap thành {content, fileUrl:null, contentType:"TEXT"}
+      ws.sendMessage(selectedRoomId, text.trim());
       setText("");
     }
 
+    // Gửi FILE
     if (pendingFile) {
-      chatApi
-        .uploadFile(pendingFile)
-        .then((res) => {
-          const fileUrl = res.data; // BE returns string url
-          const type = pendingFile.type.startsWith("image/") ? "IMAGE" : "FILE";
-          const payload = {
-            content: pendingFile.name,
-            type,
-            fileUrl,
-            sender: "ADMIN",
-          };
-          ws.sendMessage(selectedRoomId, payload);
-          setPendingFile(null);
-        })
-        .catch((err) => console.error("Upload error:", err));
+      try {
+        const res = await chatApi.uploadFile(pendingFile);
+        // BE trả { url, contentType }
+        const { url, contentType } = res.data;
+
+        ws.sendMessage(selectedRoomId, {
+          content: pendingFile.name,
+          fileUrl: url,
+          contentType,
+        });
+
+        setPendingFile(null);
+      } catch (err) {
+        console.error("Upload error:", err);
+      }
     }
   };
 
