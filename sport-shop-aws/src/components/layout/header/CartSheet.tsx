@@ -6,12 +6,14 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ShoppingBag, Minus, Plus } from "lucide-react";
-import React, { useEffect } from "react";
-import { Link } from "react-router";
+import { useEffect } from "react";
+import { useNavigate } from "react-router";
 import { useCartStore } from "@/store/useCartStore";
 import { formatCurrency } from "@/lib/utils";
+import { toast } from "sonner";
 
 const CartSheet = () => {
+  const navigate = useNavigate();
   const {
     cart,
     fetchCart,
@@ -29,6 +31,14 @@ const CartSheet = () => {
   const totalPrice = Number(cart?.totalPrice || 0);
 
   const isUpdating = (itemId: number) => updatingItems.includes(itemId);
+
+  const handleCheckout = () => {
+    if (totalItems === 0) {
+      toast.error("Giỏ hàng của bạn đang trống");
+      return;
+    }
+    navigate("/checkout");
+  };
 
   return (
     <Sheet>
@@ -142,7 +152,11 @@ const CartSheet = () => {
               <p className="text-xl font-bold">{formatCurrency(totalPrice)}</p>
             </div>
             <div className="space-y-3">
-              <button className="w-full bg-[#0f172a] text-white h-12 rounded-sm font-bold uppercase hover:bg-[#1e293b] transition-colors">
+              <button
+                onClick={handleCheckout}
+                disabled={totalItems === 0 || isLoading}
+                className="w-full bg-[#0f172a] text-white h-12 rounded-sm font-bold uppercase hover:bg-[#1e293b] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+              >
                 Thanh toán
               </button>
             </div>

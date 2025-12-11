@@ -20,8 +20,20 @@ export interface UpdateAudienceDTO {
 
 export const audienceApi = {
   getAll: async () => {
-    const response = await api.get<{ data: Audience[] }>("/api/audiences");
-    return response.data;
+    const response = await api.get<Audience[] | { data: Audience[] }>("/api/audiences");
+    
+    // Xử lý cả 2 trường hợp: array trực tiếp hoặc object có data
+    const responseData = response.data;
+    
+    // Nếu là array trực tiếp
+    if (Array.isArray(responseData)) {
+      return {
+        data: responseData,
+      };
+    }
+    
+    // Nếu là object có data
+    return responseData;
   },
 
   getById: async (id: number) => {

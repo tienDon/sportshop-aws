@@ -43,7 +43,7 @@ export const useProductDetail = (slug?: string) => {
 
   // 2. Logic Khởi tạo lựa chọn ban đầu (chọn Variant đầu tiên)
   useEffect(() => {
-    if (product && product.variants.length > 0 && !selectedColorId) {
+    if (product && product.variants && product.variants.length > 0 && !selectedColorId) {
       const firstVariant = product.variants[0];
       setSelectedColorId(firstVariant.colorId);
       setSelectedSize(firstVariant.sizeName);

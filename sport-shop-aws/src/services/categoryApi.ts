@@ -48,11 +48,81 @@ export interface UpdateCategoryDTO {
   parentId?: number | null;
 }
 
+/**
+ * Flatten category tree to flat array
+ * Handles nested categories up to 3 levels deep
+ */
+function flattenCategoryTree(
+  categories: Category[],
+  parent: Category | null = null
+): Category[] {
+  const result: Category[] = [];
+
+  for (const category of categories) {
+    // Create a copy of category without children
+    // Set parent reference if parent exists
+    const flatCategory: Category = {
+      ...category,
+      parentId: category.parentId || (parent ? parent.id : null),
+      parent: parent || undefined,
+      children: undefined, // Remove children from flat structure
+    };
+
+    result.push(flatCategory);
+
+    // Recursively flatten children if they exist
+    if (category.children && category.children.length > 0) {
+      const flattenedChildren = flattenCategoryTree(
+        category.children,
+        flatCategory
+      );
+      result.push(...flattenedChildren);
+    }
+  }
+
+  return result;
+}
+
 export const categoryApi = {
   // Category CRUD
   getAll: async () => {
-    const response = await api.get<{ data: Category[] }>("/api/categories/all");
-    return response.data;
+    const response = await api.get<{ data: Category[] }>("/api/categories/tree");
+    console.log("Category API - Raw response:", response.data);
+    
+    // Check if categories have categoryAudiences and categoryAttributes
+    if (response.data.data && response.data.data.length > 0) {
+      const firstCategory = response.data.data[0];
+      console.log("Category API - First category structure:", {
+        id: firstCategory.id,
+        name: firstCategory.name,
+        hasCategoryAudiences: !!firstCategory.categoryAudiences,
+        categoryAudiencesLength: firstCategory.categoryAudiences?.length || 0,
+        hasCategoryAttributes: !!firstCategory.categoryAttributes,
+        categoryAttributesLength: firstCategory.categoryAttributes?.length || 0,
+        categoryKeys: Object.keys(firstCategory),
+      });
+    }
+    
+    // Flatten the tree structure to a flat array
+    const flattenedCategories = flattenCategoryTree(response.data.data || []);
+    
+    // Check flattened categories
+    if (flattenedCategories.length > 0) {
+      const firstFlattened = flattenedCategories[0];
+      console.log("Category API - First flattened category:", {
+        id: firstFlattened.id,
+        name: firstFlattened.name,
+        hasCategoryAudiences: !!firstFlattened.categoryAudiences,
+        categoryAudiencesLength: firstFlattened.categoryAudiences?.length || 0,
+        hasCategoryAttributes: !!firstFlattened.categoryAttributes,
+        categoryAttributesLength: firstFlattened.categoryAttributes?.length || 0,
+      });
+    }
+    
+    return {
+      ...response.data,
+      data: flattenedCategories,
+    };
   },
 
   getTree: async () => {

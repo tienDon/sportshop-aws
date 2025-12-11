@@ -26,8 +26,12 @@ export interface UpdateSportDTO {
 
 export const sportApi = {
   getAll: async () => {
-    const response = await api.get<{ data: Sport[] }>("/api/sports");
-    return response.data;
+    const response = await api.get<Sport[] | { data: Sport[] }>("/api/sports");
+    // API returns array directly or { data: [...] }
+    const data = Array.isArray(response.data) 
+      ? response.data 
+      : (response.data as { data: Sport[] }).data || [];
+    return { data };
   },
 
   create: async (data: CreateSportDTO) => {

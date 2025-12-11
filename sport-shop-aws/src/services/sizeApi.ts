@@ -36,30 +36,36 @@ export const sizeApi = {
     limit?: number;
   }) => {
     const response = await api.get<
-      ApiResponse<Size[] | PaginatedResponse<Size>>
-    >("/api/sizes", { params });
-    return response.data;
+      Size[] | ApiResponse<Size[] | PaginatedResponse<Size>>
+    >("/api/size", { params });
+    // API returns array directly or { data: [...] }
+    if (Array.isArray(response.data)) {
+      return { data: response.data };
+    }
+    // If it's an object, it might be ApiResponse or PaginatedResponse
+    const data = (response.data as any).data || (response.data as any).sizes || [];
+    return { data };
   },
 
   getChartTypes: async () => {
     const response = await api.get<ApiResponse<string[]>>(
-      "/api/sizes/chart/type"
+      "/api/size/chart/type"
     );
     return response.data;
   },
 
   create: async (data: CreateSizeDTO) => {
-    const response = await api.post<ApiResponse<Size>>("/api/sizes", data);
+    const response = await api.post<ApiResponse<Size>>("/api/size", data);
     return response.data;
   },
 
   update: async (id: number, data: UpdateSizeDTO) => {
-    const response = await api.put<ApiResponse<Size>>(`/api/sizes/${id}`, data);
+    const response = await api.put<ApiResponse<Size>>(`/api/size/${id}`, data);
     return response.data;
   },
 
   delete: async (id: number) => {
-    const response = await api.delete<ApiResponse<void>>(`/api/sizes/${id}`);
+    const response = await api.delete<ApiResponse<void>>(`/api/size/${id}`);
     return response.data;
   },
 };

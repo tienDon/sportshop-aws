@@ -29,6 +29,7 @@ export function SportManager() {
     queryFn: sportApi.getAll,
   });
 
+  // sportApi.getAll returns { data: Sport[] }
   const sports = data?.data || [];
 
   // Form Handling
@@ -36,7 +37,7 @@ export function SportManager() {
     register,
     handleSubmit,
     reset,
-    // setValue,
+    setValue,
     control,
     formState: { errors },
   } = useForm<CreateSportDTO>({
@@ -245,8 +246,9 @@ export function SportManager() {
                 placeholder="Ví dụ: Bóng đá"
                 {...register("name", { required: "Tên là bắt buộc" })}
                 onChange={(e) => {
-                  setValue("name", e.target.value);
-                  setValue("slug", generateSlug(e.target.value));
+                  const value = e.target.value;
+                  setValue("name", value);
+                  setValue("slug", generateSlug(value));
                 }}
               />
               {errors.name && (

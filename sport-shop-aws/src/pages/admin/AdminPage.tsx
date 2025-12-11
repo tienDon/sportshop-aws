@@ -8,10 +8,9 @@ import { AdminSecondarySidebar } from "@/features/admin/layout/AdminSecondarySid
 import { AdminHeader } from "@/features/admin/layout/AdminHeader";
 import { AdminDashboardContent } from "@/features/admin/dashboard/AdminDashboardContent";
 
-// Chat Components & Hooks
-import { useAdminChat } from "@/features/admin/chat/hooks/useAdminChat";
+// Legacy Chat Components
+import { useLegacyAdminChat } from "@/features/admin/chat/hooks/useLegacyAdminChat";
 import { ChatWindow } from "@/features/admin/chat/components/ChatWindow";
-import { ImagePreviewModal } from "@/features/admin/chat/components/ImagePreviewModal";
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -20,8 +19,6 @@ export default function AdminDashboard() {
   const [activePrimary, setActivePrimary] = useState<"system" | "chat">(
     "system"
   );
-
-  // State: Mục được chọn
   const [selectedMenu, setSelectedMenu] = useState("dashboard");
 
   // Update selectedMenu based on URL
@@ -52,11 +49,11 @@ export default function AdminDashboard() {
     }
   }, [location.pathname]);
 
-  // Chat Hook
+  // Legacy Chat Hook
   const {
     rooms,
     selectedRoomId,
-    setSelectedRoomId,
+    selectRoom,
     messages,
     text,
     setText,
@@ -64,52 +61,44 @@ export default function AdminDashboard() {
     setPendingFile,
     previewImage,
     setPreviewImage,
-    handleSend,
+    sendMessage,
     handleFileChange,
-  } = useAdminChat();
+  } = useLegacyAdminChat();
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">
       <TooltipProvider>
-        {/* =========================================
-           CỘT A: PRIMARY SIDEBAR (Icon Navigation)
-           ========================================= */}
+        {/* Sidebar chính */}
         <AdminSidebar
           activePrimary={activePrimary}
           setActivePrimary={setActivePrimary}
-          unreadCount={rooms.filter((r) => r.hasUnread).length}
+          unreadCount={0} // Không dùng hệ chat mới → bỏ unread
         />
 
-        {/* =========================================
-           CỘT B: SECONDARY SIDEBAR (Context List)
-           ========================================= */}
+        {/* Sidebar phụ (context menu) */}
         <AdminSecondarySidebar
           activePrimary={activePrimary}
           selectedMenu={selectedMenu}
           setSelectedMenu={setSelectedMenu}
-          rooms={rooms}
-          selectedRoomId={Number(selectedRoomId)}
-          onSelectRoom={setSelectedRoomId}
+          rooms={activePrimary === "chat" ? rooms : []}
+          selectedRoomId={activePrimary === "chat" ? selectedRoomId : null}
+          onSelectRoom={activePrimary === "chat" ? selectRoom : () => {}}
         />
 
-        {/* =========================================
-           CỘT C: MAIN AREA (Workspace)
-           ========================================= */}
+        {/* Main area */}
         <main className="flex-1 bg-slate-50/50 dark:bg-slate-950 flex flex-col min-w-0">
-          {/* Header Cột C */}
           <AdminHeader
             activePrimary={activePrimary}
-            selectedRoomId={Number(selectedRoomId)}
+            selectedRoomId={activePrimary === "chat" ? selectedRoomId : null}
           />
 
-          {/* Nội dung chính */}
-          <div className="flex-1 p-6 overflow-hidden flex flex-col">
-            {/* --- CASE: SYSTEM DASHBOARD --- */}
+          <div className="flex-1 overflow-hidden flex flex-col">
             {activePrimary === "system" && (
-              <AdminDashboardContent selectedMenu={selectedMenu} />
+              <div className="flex-1 p-6 overflow-hidden flex flex-col">
+                <AdminDashboardContent selectedMenu={selectedMenu} />
+              </div>
             )}
 
-            {/* --- CASE: CHAT UI --- */}
             {activePrimary === "chat" && (
               <ChatWindow
                 selectedRoomId={selectedRoomId}
@@ -118,20 +107,15 @@ export default function AdminDashboard() {
                 setText={setText}
                 pendingFile={pendingFile}
                 setPendingFile={setPendingFile}
-                handleSend={handleSend}
-                handleFileChange={handleFileChange}
+                previewImage={previewImage}
                 setPreviewImage={setPreviewImage}
+                onSend={sendMessage}
+                onFileChange={handleFileChange}
               />
             )}
           </div>
         </main>
       </TooltipProvider>
-
-      {/* Image Preview Modal */}
-      <ImagePreviewModal
-        src={previewImage}
-        onClose={() => setPreviewImage(null)}
-      />
     </div>
   );
 }

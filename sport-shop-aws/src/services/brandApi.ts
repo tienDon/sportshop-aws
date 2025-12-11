@@ -32,10 +32,23 @@ export interface UpdateBrandDTO {
 
 export const brandApi = {
   getAll: async () => {
-    const response = await api.get<{
-      data: { brands: Brand[]; count: number };
-    }>("/api/brands");
-    return response.data;
+    const response = await api.get<Brand[] | { data: { brands: Brand[]; count: number } }>("/api/brands");
+    
+    // Xử lý cả 2 trường hợp: array trực tiếp hoặc object có data.brands
+    const responseData = response.data;
+    
+    // Nếu là array trực tiếp
+    if (Array.isArray(responseData)) {
+      return {
+        data: {
+          brands: responseData,
+          count: responseData.length,
+        },
+      };
+    }
+    
+    // Nếu là object có data.brands
+    return responseData;
   },
 
   create: async (data: CreateBrandDTO) => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { categoryApi } from "@/services/categoryApi";
 import { audienceApi } from "@/services/audienceApi";
@@ -43,26 +43,125 @@ export function CategoryManager() {
   const [selectedAttributes, setSelectedAttributes] = useState<number[]>([]);
 
   // Fetch Categories
-  const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
+  const { data: categoriesData, isLoading: categoriesLoading, isError: categoriesError } = useQuery({
     queryKey: ["categories"],
     queryFn: categoryApi.getAll,
   });
 
   // Fetch Audiences
-  const { data: audiencesData } = useQuery({
+  const { data: audiencesData, isError: audiencesError } = useQuery({
     queryKey: ["audiences"],
     queryFn: audienceApi.getAll,
   });
 
   // Fetch Attributes
-  const { data: attributesData } = useQuery({
+  const { data: attributesData, isError: attributesError } = useQuery({
     queryKey: ["attributes"],
     queryFn: attributeApi.getAll,
   });
 
+  const [categoriesWithRelations, setCategoriesWithRelations] = useState<Category[]>([]);
+  
   const categories = categoriesData?.data || [];
   const audiences = audiencesData?.data || [];
   const attributes = attributesData?.data || [];
+  
+  // Fetch relations for all categories if they're not included in the tree response
+  useEffect(() => {
+    const fetchCategoryRelations = async () => {
+      if (categories.length === 0) {
+        setCategoriesWithRelations([]);
+        return;
+      }
+      
+      // Check if first category already has relations
+      const firstCategory = categories[0];
+      const hasRelations = firstCategory.categoryAudiences || firstCategory.categoryAttributes;
+      
+      if (hasRelations) {
+        // Relations already included in response
+        console.log("CategoryManager - Relations already included in API response");
+        setCategoriesWithRelations(categories);
+        return;
+      }
+      
+      // Relations not included, fetch them for all categories
+      console.log("CategoryManager - Relations not included, fetching for all categories...");
+      try {
+        const categoriesWithRelationsData = await Promise.all(
+          categories.map(async (category) => {
+            try {
+              const [audiencesResponse, attributesResponse] = await Promise.all([
+                categoryApi.getAudiences(category.id).catch((err) => {
+                  console.error(`Error fetching audiences for category ${category.id}:`, err);
+                  return { data: [] };
+                }),
+                categoryApi.getAttributes(category.id).catch((err) => {
+                  console.error(`Error fetching attributes for category ${category.id}:`, err);
+                  return { data: [] };
+                }),
+              ]);
+              
+              // Log the response structure for debugging (only for first category)
+              if (category.id === 1) {
+                console.log(`Category ${category.id} - Attributes response:`, {
+                  attributesResponse,
+                  attributesData: attributesResponse.data,
+                  firstAttribute: attributesResponse.data?.[0],
+                  attributesDataKeys: attributesResponse.data?.[0] ? Object.keys(attributesResponse.data[0]) : [],
+                });
+              }
+              
+              return {
+                ...category,
+                categoryAudiences: audiencesResponse.data || [],
+                categoryAttributes: attributesResponse.data || [],
+              };
+            } catch (error) {
+              console.error(`Error fetching relations for category ${category.id}:`, error);
+              return category;
+            }
+          })
+        );
+        
+        console.log("CategoryManager - Fetched relations for all categories:", {
+          count: categoriesWithRelationsData.length,
+          firstCategory: categoriesWithRelationsData[0] ? {
+            id: categoriesWithRelationsData[0].id,
+            name: categoriesWithRelationsData[0].name,
+            categoryAudiencesLength: categoriesWithRelationsData[0].categoryAudiences?.length || 0,
+            categoryAttributesLength: categoriesWithRelationsData[0].categoryAttributes?.length || 0,
+          } : null,
+        });
+        
+        setCategoriesWithRelations(categoriesWithRelationsData);
+      } catch (error) {
+        console.error("Error fetching category relations:", error);
+        setCategoriesWithRelations(categories);
+      }
+    };
+    
+    fetchCategoryRelations();
+  }, [categories]);
+  
+  // Use categories with relations if available, otherwise use original categories
+  const displayCategories = categoriesWithRelations.length > 0 ? categoriesWithRelations : categories;
+  
+  // Debug: Log categories to check structure
+  console.log("CategoryManager - Display Categories:", {
+    count: displayCategories.length,
+    firstCategory: displayCategories[0] ? {
+      id: displayCategories[0].id,
+      name: displayCategories[0].name,
+      hasCategoryAudiences: !!displayCategories[0].categoryAudiences,
+      categoryAudiencesLength: displayCategories[0].categoryAudiences?.length || 0,
+      categoryAudiences: displayCategories[0].categoryAudiences,
+      hasCategoryAttributes: !!displayCategories[0].categoryAttributes,
+      categoryAttributesLength: displayCategories[0].categoryAttributes?.length || 0,
+      categoryAttributes: displayCategories[0].categoryAttributes,
+      categoryKeys: Object.keys(displayCategories[0] || {}),
+    } : null,
+  });
 
   // Category Form
   const categoryForm = useForm<CreateCategoryDTO>({
@@ -92,12 +191,18 @@ export function CategoryManager() {
 
   const handleManageRelations = (category: Category) => {
     setManagingCategory(category);
-    setSelectedAudiences(
-      category.categoryAudiences?.map((ca) => ca.audienceId) || []
-    );
-    setSelectedAttributes(
-      category.categoryAttributes?.map((ca) => ca.attributeId) || []
-    );
+    // Extract audience IDs - handle both nested object and ID-only cases
+    const audienceIds = category.categoryAudiences?.map((ca) => 
+      ca.audienceId || (ca.audience?.id) || ca.id
+    ).filter((id): id is number => typeof id === 'number') || [];
+    
+    // Extract attribute IDs - handle both nested object and ID-only cases
+    const attributeIds = category.categoryAttributes?.map((ca) => 
+      ca.attributeId || (ca.attribute?.id) || ca.id
+    ).filter((id): id is number => typeof id === 'number') || [];
+    
+    setSelectedAudiences(audienceIds);
+    setSelectedAttributes(attributeIds);
     setIsRelationDialogOpen(true);
   };
 
@@ -258,14 +363,27 @@ export function CategoryManager() {
               </tr>
             </thead>
             <tbody className="[&_tr:last-child]:border-0">
-              {categories.length === 0 ? (
+              {categoriesError ? (
+                <tr>
+                  <td colSpan={7} className="h-24 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-red-500 font-semibold">
+                        Đã xảy ra lỗi khi tải danh mục.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Vui lòng thử lại sau hoặc liên hệ quản trị viên.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : displayCategories.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="h-24 text-center">
                     Không có dữ liệu.
                   </td>
                 </tr>
               ) : (
-                categories.map((category) => (
+                displayCategories.map((category) => (
                   <tr
                     key={category.id}
                     className="border-b transition-colors hover:bg-muted/50"
@@ -281,15 +399,22 @@ export function CategoryManager() {
                     <td className="p-4 align-middle">
                       <div className="flex flex-wrap gap-1">
                         {category.categoryAudiences?.length ? (
-                          category.categoryAudiences.map((ca, index) => (
-                            <Badge
-                              key={`audience-${category.id}-${index}`}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {ca.audience.name}
-                            </Badge>
-                          ))
+                          category.categoryAudiences.map((ca, index) => {
+                            // Handle both nested object and ID-only cases
+                            const audienceName = ca.audience?.name || 
+                              audiences.find(a => a.id === ca.audienceId)?.name || 
+                              `Audience ID: ${ca.audienceId}`;
+                            
+                            return (
+                              <Badge
+                                key={`audience-${category.id}-${index}`}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {audienceName}
+                              </Badge>
+                            );
+                          })
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
@@ -298,15 +423,52 @@ export function CategoryManager() {
                     <td className="p-4 align-middle">
                       <div className="flex flex-wrap gap-1">
                         {category.categoryAttributes?.length ? (
-                          category.categoryAttributes.map((ca, index) => (
-                            <Badge
-                              key={`attribute-${category.id}-${index}`}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              {ca.attribute.name}
-                            </Badge>
-                          ))
+                          category.categoryAttributes.map((ca, index) => {
+                            // Log for debugging
+                            if (index === 0) {
+                              console.log(`Category ${category.id} - Attribute item:`, {
+                                ca,
+                                hasAttribute: !!ca.attribute,
+                                hasAttributeId: !!ca.attributeId,
+                                attributeId: ca.attributeId,
+                                attributeName: ca.attribute?.name,
+                                allKeys: Object.keys(ca),
+                              });
+                            }
+                            
+                            // Handle multiple possible structures:
+                            // 1. ca.attribute.name (nested object)
+                            // 2. ca.attributeId (ID only, need to find from attributes array)
+                            // 3. ca.id (if ca is the attribute itself)
+                            let attributeName: string | undefined;
+                            
+                            if (ca.attribute?.name) {
+                              attributeName = ca.attribute.name;
+                            } else if (ca.attributeId) {
+                              attributeName = attributes.find(a => a.id === ca.attributeId)?.name;
+                            } else if ((ca as any).name) {
+                              // If ca itself is an attribute object
+                              attributeName = (ca as any).name;
+                            } else if (ca.id) {
+                              // Try to find by ca.id as attributeId
+                              attributeName = attributes.find(a => a.id === ca.id)?.name;
+                            }
+                            
+                            if (!attributeName) {
+                              console.warn(`Could not resolve attribute name for category ${category.id}:`, ca);
+                              return null; // Don't render if we can't find the name
+                            }
+                            
+                            return (
+                              <Badge
+                                key={`attribute-${category.id}-${index}`}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                {attributeName}
+                              </Badge>
+                            );
+                          }).filter(Boolean) // Remove null entries
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}

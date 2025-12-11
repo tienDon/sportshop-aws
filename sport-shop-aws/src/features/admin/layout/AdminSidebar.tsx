@@ -7,6 +7,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useNavigate } from "react-router";
 
 interface AdminSidebarProps {
   activePrimary: "system" | "chat";
@@ -19,6 +21,21 @@ export function AdminSidebar({
   setActivePrimary,
   unreadCount,
 }: AdminSidebarProps) {
+  const { logout } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Navigate về trang chủ sau khi logout
+      navigate("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Vẫn navigate về trang chủ dù có lỗi
+      navigate("/");
+    }
+  };
+
   return (
     <aside className="w-[70px] bg-slate-950 flex flex-col items-center py-6 gap-6 z-20 flex-none text-slate-50">
       {/* Logo */}
@@ -78,13 +95,19 @@ export function AdminSidebar({
       </Tooltip>
 
       <div className="mt-auto flex flex-col gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-12 w-12 rounded-xl text-slate-400 hover:text-red-400 hover:bg-slate-800"
-        >
-          <LogOut className="w-6 h-6" />
-        </Button>
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-12 w-12 rounded-xl text-slate-400 hover:text-red-400 hover:bg-slate-800"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-6 h-6" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">Đăng xuất</TooltipContent>
+        </Tooltip>
       </div>
     </aside>
   );

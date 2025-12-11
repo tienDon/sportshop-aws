@@ -101,8 +101,16 @@ export function ProductCreateDialog({
   });
 
   const brands = brandsData?.data?.brands || [];
-  const categories = categoriesData?.data || [];
+  // Handle both array and object response structures for categories
+  // categoryApi.getAll() returns { data: Category[], ... }
+  const categories = (() => {
+    if (!categoriesData) return [];
+    if (Array.isArray(categoriesData)) return categoriesData;
+    if (Array.isArray(categoriesData.data)) return categoriesData.data;
+    return [];
+  })();
   const audiences = audiencesData?.data || [];
+  // sportApi.getAll() returns { data: Sport[] }
   const sports = sportsData?.data || [];
 
   // Create mutation
@@ -205,7 +213,7 @@ export function ProductCreateDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Tạo sản phẩm mới</DialogTitle>
           <DialogDescription>
@@ -218,7 +226,8 @@ export function ProductCreateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto pr-2 -mr-2">
           {/* Step 1: Thông tin cơ bản */}
           {step === 1 && (
             <div className="grid gap-4 py-4">
@@ -351,7 +360,7 @@ export function ProductCreateDialog({
               <div className="space-y-3">
                 <Label>Danh mục</Label>
                 <div className="border rounded-lg p-4 max-h-60 overflow-y-auto">
-                  {categories.length === 0 ? (
+                  {!Array.isArray(categories) || categories.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Đang tải...</p>
                   ) : (
                     <div className="grid grid-cols-2 gap-2">
@@ -496,8 +505,9 @@ export function ProductCreateDialog({
               </div>
             </div>
           )}
+          </div>
 
-          <DialogFooter className="flex justify-between">
+          <DialogFooter className="flex justify-between mt-4 flex-shrink-0 border-t pt-4">
             <div className="flex gap-2">
               {step > 1 && (
                 <Button type="button" variant="outline" onClick={handleBack}>

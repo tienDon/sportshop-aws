@@ -27,6 +27,7 @@ export function ColorManager() {
     queryFn: colorApi.getAll,
   });
 
+  // colorApi.getAll returns { data: Color[] }
   const colors = data?.data || [];
 
   // Form Handling
@@ -34,7 +35,6 @@ export function ColorManager() {
     register,
     handleSubmit,
     reset,
-    setValue,
     watch,
     formState: { errors },
   } = useForm<CreateColorDTO>({

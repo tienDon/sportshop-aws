@@ -163,14 +163,6 @@ export function SizeManager() {
     );
   }
 
-  if (isError) {
-    return (
-      <div className="text-center text-red-500">
-        Đã xảy ra lỗi khi tải dữ liệu.
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full gap-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
@@ -232,7 +224,20 @@ export function SizeManager() {
               </tr>
             </thead>
             <tbody className="[&_tr:last-child]:border-0">
-              {sizes.length === 0 ? (
+              {isError ? (
+                <tr>
+                  <td colSpan={5} className="h-24 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-red-500 font-semibold">
+                        Đã xảy ra lỗi khi tải kích cỡ.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Vui lòng thử lại sau hoặc liên hệ quản trị viên.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : sizes.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="h-24 text-center">
                     Không có dữ liệu.

@@ -12,14 +12,17 @@ const ProductDetail = (props: ProductDetailProps) => {
   if (!product) return null;
 
   // Use images from current variant, or fallback to first variant's images
+  // Add null checks for variants array
   const images =
-    currentVariant?.imageUrls || product.variants[0]?.imageUrls || [];
+    currentVariant?.imageUrls || 
+    (product.variants && product.variants.length > 0 ? product.variants[0]?.imageUrls : []) || 
+    [];
 
   return (
     <div className="py-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
         <ProductGallery
-          key={currentVariant?.id || product.variants[0]?.id}
+          key={currentVariant?.id || (product.variants && product.variants.length > 0 ? product.variants[0]?.id : product.id)}
           images={images}
           productName={product.name}
         />

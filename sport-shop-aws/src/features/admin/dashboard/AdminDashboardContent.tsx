@@ -21,9 +21,9 @@ export function AdminDashboardContent({
 }: AdminDashboardContentProps) {
   const location = useLocation();
 
-  // Check if we're on product detail page
+  // Check if we're on product detail page (using slug)
   const productDetailMatch = location.pathname.match(
-    /^\/admin\/products\/(\d+)$/
+    /^\/admin\/products\/([^/]+)$/
   );
   if (productDetailMatch) {
     return <ProductDetailPage />;

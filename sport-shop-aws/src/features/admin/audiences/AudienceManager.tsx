@@ -35,6 +35,7 @@ export function AudienceManager() {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CreateAudienceDTO>({
     defaultValues: {

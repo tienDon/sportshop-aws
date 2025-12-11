@@ -21,8 +21,12 @@ export interface UpdateColorDTO {
 
 export const colorApi = {
   getAll: async () => {
-    const response = await api.get<ApiResponse<Color[]>>("/api/colors");
-    return response.data;
+    const response = await api.get<Color[] | ApiResponse<Color[]>>("/api/colors");
+    // API returns array directly or { data: [...] }
+    const data = Array.isArray(response.data) 
+      ? response.data 
+      : (response.data as ApiResponse<Color[]>).data || [];
+    return { data };
   },
 
   create: async (data: CreateColorDTO) => {

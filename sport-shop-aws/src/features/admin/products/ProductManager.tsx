@@ -19,7 +19,10 @@ export function ProductManager() {
     queryFn: productAdminApi.getAll,
   });
 
-  const products = productsData?.data || [];
+  // Handle both array and object response structures
+  const products = Array.isArray(productsData)
+    ? productsData
+    : productsData?.data || [];
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -132,20 +135,26 @@ export function ProductManager() {
                         )}
                       </div>
                     </td>
-                    <td className="p-4 align-middle">{product.brand.name}</td>
+                    <td className="p-4 align-middle">
+                      {(product as any).brandName || product.brand?.name || "—"}
+                    </td>
                     <td className="p-4 align-middle">
                       {Number(product.basePrice).toLocaleString("vi-VN")}đ
                     </td>
                     <td className="p-4 align-middle text-center">
                       <Badge variant="outline">
-                        {product._count?.variants || 0}
+                        {product._count?.variants || 
+                         (product as any).variants?.length || 
+                         0}
                       </Badge>
                     </td>
                     <td className="p-4 align-middle text-center">
                       <Badge
-                        variant={product.isActive ? "default" : "secondary"}
+                        variant={
+                          product.isActive !== false ? "default" : "secondary"
+                        }
                       >
-                        {product.isActive ? "Hoạt động" : "Ẩn"}
+                        {product.isActive !== false ? "Hoạt động" : "Ẩn"}
                       </Badge>
                     </td>
                     <td className="p-4 align-middle text-right">
@@ -154,7 +163,7 @@ export function ProductManager() {
                           variant="ghost"
                           size="icon"
                           onClick={() =>
-                            navigate(`/admin/products/${product.id}`)
+                            navigate(`/admin/products/${product.slug}`)
                           }
                           title="Xem chi tiết"
                         >
@@ -164,7 +173,7 @@ export function ProductManager() {
                           variant="ghost"
                           size="icon"
                           onClick={() =>
-                            navigate(`/admin/products/${product.id}`)
+                            navigate(`/admin/products/${product.slug}`)
                           }
                           title="Chỉnh sửa"
                         >

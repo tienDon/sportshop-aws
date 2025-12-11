@@ -3,6 +3,7 @@ import { Outlet } from "react-router";
 import Header from "@/components/layout/header/Header";
 import AnnouncementBanner from "@/components/layout/header/AnnouncementBanner";
 import ChatBubble from "@/components/common/ChatBubble";
+import CustomerChat from "@/legacy-chat/pages/CustomerChat";
 
 const MainLayout = () => {
   return (
@@ -12,7 +13,8 @@ const MainLayout = () => {
       <main>
         <Outlet />
       </main>
-      <ChatBubble />
+      {/* <ChatBubble /> */}
+      <CustomerChat />
       {/* Footer can be added here later */}
     </div>
   );

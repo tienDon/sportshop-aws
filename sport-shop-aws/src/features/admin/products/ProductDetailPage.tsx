@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation, useParams } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { generateSlug } from "@/utils/slugify";
@@ -11,7 +11,7 @@ import {
   type UpdateVariantDTO,
 } from "@/services/productAdminApi";
 import { colorApi } from "@/services/colorApi";
-import { sizeApi } from "@/services/sizeApi";
+import { sizeApi, type Size } from "@/services/sizeApi";
 import { categoryApi } from "@/services/categoryApi";
 import { audienceApi } from "@/services/audienceApi";
 import { sportApi } from "@/services/sportApi";
@@ -48,10 +48,24 @@ export function ProductDetailPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const params = useParams();
 
-  // Extract ID from URL path
-  const match = location.pathname.match(/\/admin\/products\/(\d+)/);
-  const id = match ? match[1] : null;
+  // Extract slug from URL path
+  // URL format: /admin/products/{slug}
+  // With route /admin/*, params["*"] = "products/{slug}"
+  const slugFromParams = params["*"]?.split("/")?.[1];
+  const match = location.pathname.match(/\/admin\/products\/([^/?#]+)/);
+  const slugFromMatch = match ? decodeURIComponent(match[1]) : null;
+  const slug = slugFromParams ? decodeURIComponent(slugFromParams) : slugFromMatch;
+
+  // Debug: Log slug extraction
+  console.log("Slug extraction debug:", {
+    pathname: location.pathname,
+    params: params["*"],
+    slugFromParams,
+    slugFromMatch,
+    finalSlug: slug,
+  });
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(
     null
@@ -66,13 +80,110 @@ export function ProductDetailPage() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   // Fetch product details
-  const { data: productData, isLoading } = useQuery({
-    queryKey: ["product-detail", id],
-    queryFn: () => productAdminApi.getById(Number(id)),
-    enabled: !!id,
+  const { 
+    data: productData, 
+    isLoading, 
+    isError,
+    error 
+  } = useQuery({
+    queryKey: ["product-detail", slug],
+    queryFn: () => {
+      console.log("Fetching product with slug:", slug);
+      return productAdminApi.getById(slug!);
+    },
+    enabled: !!slug,
+    retry: 1,
   });
 
-  const product = productData?.data;
+  // Log error if any
+  if (isError) {
+    console.error("Error fetching product:", error);
+  }
+
+  // Extract product from response
+  // API returns { success: boolean; data: Product[] } (array)
+  // But for single product by slug, we take the first element
+  let product = Array.isArray(productData?.data) 
+    ? productData.data[0] 
+    : productData?.data;
+
+  // Normalize product relations if backend returns different structure
+  // Backend might return 'categories', 'audiences', 'sports' instead of 'productCategories', etc.
+  if (product) {
+    const productAny = product as any;
+    
+    // If backend returns 'categories' instead of 'productCategories', normalize it
+    if (!product.productCategories && productAny.categories && Array.isArray(productAny.categories)) {
+      product.productCategories = productAny.categories.map((cat: any) => ({
+        productId: product.id,
+        categoryId: cat.id,
+        isPrimary: cat.isPrimary || false,
+        category: {
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+        },
+      }));
+    }
+    
+    // If backend returns 'audiences' instead of 'productAudiences', normalize it
+    if (!product.productAudiences && productAny.audiences && Array.isArray(productAny.audiences)) {
+      product.productAudiences = productAny.audiences.map((aud: any) => ({
+        productId: product.id,
+        audienceId: aud.id,
+        audience: {
+          id: aud.id,
+          name: aud.name,
+          slug: aud.slug,
+        },
+      }));
+    }
+    
+    // If backend returns 'sports' instead of 'productSports', normalize it
+    if (!product.productSports && productAny.sports && Array.isArray(productAny.sports)) {
+      product.productSports = productAny.sports.map((sport: any) => ({
+        productId: product.id,
+        sportId: sport.id,
+        sport: {
+          id: sport.id,
+          name: sport.name,
+          slug: sport.slug,
+        },
+      }));
+    }
+  }
+  
+  // Debug: Log product to check structure
+  console.log("Product data debug:", {
+    productData: JSON.stringify(productData, null, 2),
+    product: JSON.stringify(product, null, 2),
+    hasProduct: !!product,
+    productId: product?.id,
+    productSlug: product?.slug,
+    productName: product?.name,
+    productType: typeof product,
+    productIsArray: Array.isArray(product),
+    productKeys: product ? Object.keys(product) : [],
+    // Check relations
+    hasProductCategories: !!product?.productCategories,
+    productCategoriesLength: product?.productCategories?.length || 0,
+    productCategories: product?.productCategories,
+    hasProductAudiences: !!product?.productAudiences,
+    productAudiencesLength: product?.productAudiences?.length || 0,
+    productAudiences: product?.productAudiences,
+    hasProductSports: !!product?.productSports,
+    productSportsLength: product?.productSports?.length || 0,
+    productSports: product?.productSports,
+    // Check for alternative field names
+    hasCategories: 'categories' in (product || {}),
+    hasAudiences: 'audiences' in (product || {}),
+    hasSports: 'sports' in (product || {}),
+    categories: (product as any)?.categories,
+    audiences: (product as any)?.audiences,
+    sports: (product as any)?.sports,
+    isLoading,
+    slug,
+  });
 
   // Fetch colors and sizes
   const { data: colorsData } = useQuery({
@@ -106,26 +217,80 @@ export function ProductDetailPage() {
     queryFn: () => attributeApi.getWithValues(),
   });
 
-  const colors = colorsData?.data || [];
-  const sizes = Array.isArray(sizesData?.data) ? sizesData.data : [];
-  const categories = categoriesData?.data || [];
-  const audiences = audiencesData?.data || [];
-  const sports = sportsData?.data || [];
-  const attributes =
-    (attributesData as { data: Attribute[] } | undefined)?.data || [];
+  // Normalize all data to arrays
+  const colors = (() => {
+    if (!colorsData) return [];
+    if (Array.isArray(colorsData)) return colorsData;
+    return colorsData.data || [];
+  })();
+  
+  const sizes: Size[] = (() => {
+    if (!sizesData) return [];
+    if (Array.isArray(sizesData)) return sizesData as Size[];
+    if (Array.isArray(sizesData.data)) return sizesData.data as Size[];
+    const sizesDataAny = sizesData as any;
+    if (sizesDataAny.sizes && Array.isArray(sizesDataAny.sizes)) return sizesDataAny.sizes as Size[];
+    return [];
+  })();
+  
+  const categories = (() => {
+    if (!categoriesData) return [];
+    if (Array.isArray(categoriesData)) return categoriesData;
+    return categoriesData.data || [];
+  })();
+  
+  const audiences = (() => {
+    if (!audiencesData) return [];
+    if (Array.isArray(audiencesData)) return audiencesData;
+    return audiencesData.data || [];
+  })();
+  
+  const sports = (() => {
+    if (!sportsData) return [];
+    if (Array.isArray(sportsData)) return sportsData;
+    return sportsData.data || [];
+  })();
+  
+  const attributes = (() => {
+    if (!attributesData) return [];
+    if (Array.isArray(attributesData)) return attributesData;
+    return attributesData.data || [];
+  })();
 
   // Product update form
   const productForm = useForm({
     defaultValues: {
-      name: product?.name || "",
-      slug: product?.slug || "",
-      basePrice: product?.basePrice || 0,
-      description: product?.description || "",
-      specifications: product?.specifications || "",
-      mainImageUrl: product?.mainImageUrl || "",
-      isActive: product?.isActive ?? true,
+      name: "",
+      slug: "",
+      basePrice: 0,
+      description: "",
+      specifications: "",
+      mainImageUrl: "",
+      isActive: true,
     },
   });
+
+  // Reset form when product data is loaded
+  useEffect(() => {
+    if (product) {
+      console.log("Resetting form with product data:", {
+        mainImageUrl: product.mainImageUrl,
+        hasMainImageUrl: !!product.mainImageUrl,
+        mainImageUrlType: typeof product.mainImageUrl,
+      });
+      productForm.reset({
+        name: product.name || "",
+        slug: product.slug || "",
+        basePrice: product.basePrice || 0,
+        description: product.description || "",
+        specifications: product.specifications || "",
+        mainImageUrl: product.mainImageUrl || "",
+        isActive: product.isActive ?? true,
+      });
+      // Log form values after reset
+      console.log("Form values after reset:", productForm.getValues());
+    }
+  }, [product, productForm]);
 
   // Variant form
   const variantForm = useForm<CreateVariantDTO>({
@@ -142,9 +307,9 @@ export function ProductDetailPage() {
   // Update product mutation
   const updateProductMutation = useMutation({
     mutationFn: (data: Record<string, unknown>) =>
-      productAdminApi.update(Number(id), data),
+      productAdminApi.update(product!.id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["product-detail", slug] });
       toast.success("Cập nhật sản phẩm thành công");
     },
     onError: () => {
@@ -155,9 +320,9 @@ export function ProductDetailPage() {
   // Variant mutations
   const createVariantMutation = useMutation({
     mutationFn: (data: CreateVariantDTO) =>
-      productAdminApi.createVariant(Number(id), data),
+      productAdminApi.createVariant(product!.id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["product-detail", slug] });
       toast.success("Tạo biến thể thành công");
       setIsVariantDialogOpen(false);
       variantForm.reset();
@@ -174,9 +339,9 @@ export function ProductDetailPage() {
     }: {
       variantId: number;
       data: UpdateVariantDTO;
-    }) => productAdminApi.updateVariant(Number(id), variantId, data),
+    }) => productAdminApi.updateVariant(product!.id, variantId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["product-detail", slug] });
       toast.success("Cập nhật biến thể thành công");
       setIsVariantDialogOpen(false);
       setEditingVariant(null);
@@ -189,9 +354,9 @@ export function ProductDetailPage() {
 
   const deleteVariantMutation = useMutation({
     mutationFn: (variantId: number) =>
-      productAdminApi.deleteVariant(Number(id), variantId),
+      productAdminApi.deleteVariant(product!.id, variantId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["product-detail", slug] });
       toast.success("Xóa biến thể thành công");
     },
     onError: () => {
@@ -201,24 +366,35 @@ export function ProductDetailPage() {
 
   // Relation mutations
   const addCategoryMutation = useMutation({
-    mutationFn: (categoryId: number) =>
-      productAdminApi.addCategory(Number(id), categoryId),
+    mutationFn: (categoryId: number) => {
+      if (!product?.id) {
+        throw new Error("Product ID is not available");
+      }
+      console.log("Adding category:", { productId: product.id, categoryId });
+      return productAdminApi.addCategory(product.id, categoryId);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["product-detail", slug] });
       toast.success("Thêm danh mục thành công");
       setIsAddingCategory(false);
       setSelectedCategoryId(0);
     },
-    onError: () => {
-      toast.error("Lỗi khi thêm danh mục");
+    onError: (error: any) => {
+      console.error("Error adding category:", error);
+      console.error("Error response:", error?.response?.data);
+      toast.error(`Lỗi khi thêm danh mục: ${error?.response?.data?.message || error.message || "Unknown error"}`);
     },
   });
 
   const removeCategoryMutation = useMutation({
-    mutationFn: (categoryId: number) =>
-      productAdminApi.removeCategory(Number(id), categoryId),
+    mutationFn: (categoryId: number) => {
+      if (!product?.id) {
+        throw new Error("Product ID is not available");
+      }
+      return productAdminApi.removeCategory(product.id, categoryId);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["product-detail", slug] });
       toast.success("Xóa danh mục thành công");
     },
     onError: () => {
@@ -227,24 +403,35 @@ export function ProductDetailPage() {
   });
 
   const addAudienceMutation = useMutation({
-    mutationFn: (audienceId: number) =>
-      productAdminApi.addAudience(Number(id), audienceId),
+    mutationFn: (audienceId: number) => {
+      if (!product?.id) {
+        throw new Error("Product ID is not available");
+      }
+      console.log("Adding audience:", { productId: product.id, audienceId });
+      return productAdminApi.addAudience(product.id, audienceId);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["product-detail", slug] });
       toast.success("Thêm đối tượng thành công");
       setIsAddingAudience(false);
       setSelectedAudienceId(0);
     },
-    onError: () => {
-      toast.error("Lỗi khi thêm đối tượng");
+    onError: (error: any) => {
+      console.error("Error adding audience:", error);
+      console.error("Error response:", error?.response?.data);
+      toast.error(`Lỗi khi thêm đối tượng: ${error?.response?.data?.message || error.message || "Unknown error"}`);
     },
   });
 
   const removeAudienceMutation = useMutation({
-    mutationFn: (audienceId: number) =>
-      productAdminApi.removeAudience(Number(id), audienceId),
+    mutationFn: (audienceId: number) => {
+      if (!product?.id) {
+        throw new Error("Product ID is not available");
+      }
+      return productAdminApi.removeAudience(product.id, audienceId);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["product-detail", slug] });
       toast.success("Xóa đối tượng thành công");
     },
     onError: () => {
@@ -253,24 +440,35 @@ export function ProductDetailPage() {
   });
 
   const addSportMutation = useMutation({
-    mutationFn: (sportId: number) =>
-      productAdminApi.addSport(Number(id), sportId),
+    mutationFn: (sportId: number) => {
+      if (!product?.id) {
+        throw new Error("Product ID is not available");
+      }
+      console.log("Adding sport:", { productId: product.id, sportId });
+      return productAdminApi.addSport(product.id, sportId);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["product-detail", slug] });
       toast.success("Thêm môn thể thao thành công");
       setIsAddingSport(false);
       setSelectedSportId(0);
     },
-    onError: () => {
-      toast.error("Lỗi khi thêm môn thể thao");
+    onError: (error: any) => {
+      console.error("Error adding sport:", error);
+      console.error("Error response:", error?.response?.data);
+      toast.error(`Lỗi khi thêm môn thể thao: ${error?.response?.data?.message || error.message || "Unknown error"}`);
     },
   });
 
   const removeSportMutation = useMutation({
-    mutationFn: (sportId: number) =>
-      productAdminApi.removeSport(Number(id), sportId),
+    mutationFn: (sportId: number) => {
+      if (!product?.id) {
+        throw new Error("Product ID is not available");
+      }
+      return productAdminApi.removeSport(product.id, sportId);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["product-detail", slug] });
       toast.success("Xóa môn thể thao thành công");
     },
     onError: () => {
@@ -279,22 +477,33 @@ export function ProductDetailPage() {
   });
 
   const addAttributeValueMutation = useMutation({
-    mutationFn: (attributeValueId: number) =>
-      productAdminApi.addAttributeValue(Number(id), attributeValueId),
+    mutationFn: (attributeValueId: number) => {
+      if (!product?.id) {
+        throw new Error("Product ID is not available");
+      }
+      console.log("Adding attribute value:", { productId: product.id, attributeValueId });
+      return productAdminApi.addAttributeValue(product.id, attributeValueId);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["product-detail", slug] });
       toast.success("Thêm thuộc tính thành công");
     },
-    onError: () => {
-      toast.error("Lỗi khi thêm thuộc tính");
+    onError: (error: any) => {
+      console.error("Error adding attribute value:", error);
+      console.error("Error response:", error?.response?.data);
+      toast.error(`Lỗi khi thêm thuộc tính: ${error?.response?.data?.message || error.message || "Unknown error"}`);
     },
   });
 
   const removeAttributeValueMutation = useMutation({
-    mutationFn: (attributeValueId: number) =>
-      productAdminApi.removeAttributeValue(Number(id), attributeValueId),
+    mutationFn: (attributeValueId: number) => {
+      if (!product?.id) {
+        throw new Error("Product ID is not available");
+      }
+      return productAdminApi.removeAttributeValue(product.id, attributeValueId);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["product-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["product-detail", slug] });
       toast.success("Xóa thuộc tính thành công");
     },
     onError: () => {
@@ -321,14 +530,39 @@ export function ProductDetailPage() {
     setEditingVariant(variant);
     const urls = variant.imageUrls || [];
     setImageUrls(urls);
+    
+    // Find sizeId from sizeName if sizeId is not available
+    let sizeId = variant.sizeId;
+    if (!sizeId && variant.sizeName) {
+      const foundSize = sizes.find((s) => s.name === variant.sizeName);
+      if (foundSize) {
+        sizeId = foundSize.id;
+        console.log("Found sizeId from sizeName:", { sizeName: variant.sizeName, sizeId });
+      } else {
+        console.warn("Could not find sizeId for sizeName:", variant.sizeName);
+      }
+    }
+    
     variantForm.reset({
       colorId: variant.colorId,
-      sizeId: variant.sizeId,
+      sizeId: sizeId || 0,
       price: Number(variant.price),
       stockQuantity: variant.stockQuantity,
       sku: variant.sku || "",
       imageUrls: urls,
     });
+    
+    console.log("Edit variant form reset:", {
+      variant: {
+        id: variant.id,
+        colorId: variant.colorId,
+        sizeId: variant.sizeId,
+        sizeName: variant.sizeName,
+        foundSizeId: sizeId,
+      },
+      formValues: variantForm.getValues(),
+    });
+    
     setIsVariantDialogOpen(true);
   };
 
@@ -469,7 +703,12 @@ export function ProductDetailPage() {
             </div>
             <div className="space-y-2">
               <Label>URL hình ảnh chính</Label>
-              <Input {...productForm.register("mainImageUrl")} />
+              <Input 
+                {...productForm.register("mainImageUrl")} 
+                placeholder="https://example.com/image.jpg"
+              />
+              {/* Debug: Show current form value */}
+              
             </div>
             <div className="space-y-2">
               <Label>Mô tả</Label>
@@ -499,7 +738,7 @@ export function ProductDetailPage() {
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <span className="text-muted-foreground">Thương hiệu:</span>{" "}
-                {product.brand.name}
+                {(product as any).brandName || product.brand?.name || "—"}
               </div>
               <div>
                 <span className="text-muted-foreground">Badge:</span>{" "}
@@ -537,60 +776,124 @@ export function ProductDetailPage() {
                 {!product.variants || product.variants.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="p-8 text-center text-muted-foreground"
                     >
                       Chưa có biến thể nào
                     </td>
                   </tr>
                 ) : (
-                  product.variants.map((variant) => (
-                    <tr key={variant.id} className="border-b hover:bg-muted/50">
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-6 h-6 rounded border"
-                            style={{
-                              backgroundColor: variant.color.hexCode,
-                            }}
-                          />
-                          <span>{variant.color.name}</span>
-                        </div>
-                      </td>
-                      <td className="p-3">{variant.size.name}</td>
-                      <td className="p-3 text-right">
-                        {Number(variant.price).toLocaleString("vi-VN")}đ
-                      </td>
-                      <td className="p-3 text-right">
-                        <Badge
-                          variant={
-                            variant.stockQuantity > 0 ? "default" : "secondary"
-                          }
-                        >
-                          {variant.stockQuantity}
-                        </Badge>
-                      </td>
-                      <td className="p-3">{variant.sku || "-"}</td>
-                      <td className="p-3 text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditVariant(variant)}
+                  product.variants.map((variant) => {
+                    // Fallback: Find color from colors array if variant.color is not available
+                    // Backend may not include color/size objects in variant response
+                    const color = variant.color || colors.find((c) => c.id === variant.colorId);
+                    const size = variant.size || sizes.find((s) => s.id === variant.sizeId);
+                    
+                    // Debug: Log variant structure
+                    console.log(`Variant ${variant.id}:`, {
+                      sizeName: variant.sizeName,
+                      sizeId: variant.sizeId,
+                      size: variant.size,
+                      hasSizeName: 'sizeName' in variant,
+                      variantKeys: Object.keys(variant),
+                    });
+                    
+                    // Debug: Log if color/size not found
+                    if (!color && variant.colorId) {
+                      console.warn(`Color not found for variant ${variant.id}, colorId: ${variant.colorId}`, {
+                        colorsAvailable: colors.length,
+                        colorIds: colors.map((c) => c.id),
+                      });
+                    }
+                    if (!size && variant.sizeId && !variant.sizeName) {
+                      console.warn(`Size not found for variant ${variant.id}, sizeId: ${variant.sizeId}`, {
+                        sizesAvailable: sizes.length,
+                        sizeIds: sizes.map((s) => s.id),
+                      });
+                    }
+                    
+                    return (
+                      <tr key={variant.id} className="border-b hover:bg-muted/50">
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            {color ? (
+                              <>
+                                <div
+                                  className="w-6 h-6 rounded border"
+                                  style={{
+                                    backgroundColor: color.hexCode || "#000000",
+                                  }}
+                                />
+                                <span>{color.name || "—"}</span>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                {variant.colorId ? `Color ID: ${variant.colorId}` : "—"}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          {variant.sizeName || size?.name || (variant.sizeId ? `Size ID: ${variant.sizeId}` : "—")}
+                        </td>
+                        <td className="p-3 text-right">
+                          {Number(variant.price).toLocaleString("vi-VN")}đ
+                        </td>
+                        <td className="p-3 text-right">
+                          <Badge
+                            variant={
+                              variant.stockQuantity > 0 ? "default" : "secondary"
+                            }
                           >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteVariant(variant.id)}
-                          >
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                            {variant.stockQuantity}
+                          </Badge>
+                        </td>
+                        <td className="p-3">{variant.sku || "-"}</td>
+                        <td className="p-3">
+                          {variant.imageUrls && variant.imageUrls.length > 0 ? (
+                            <div className="flex gap-1">
+                              {variant.imageUrls.slice(0, 3).map((url, idx) => (
+                                <img
+                                  key={idx}
+                                  src={url}
+                                  alt={`Variant ${variant.id} image ${idx + 1}`}
+                                  className="w-10 h-10 object-cover rounded border"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = "none";
+                                  }}
+                                />
+                              ))}
+                              {variant.imageUrls.length > 3 && (
+                                <div className="w-10 h-10 flex items-center justify-center bg-muted rounded border text-xs">
+                                  +{variant.imageUrls.length - 3}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditVariant(variant)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteVariant(variant.id)}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -632,12 +935,21 @@ export function ProductDetailPage() {
                   </SelectContent>
                 </Select>
                 <Button
-                  onClick={() => addCategoryMutation.mutate(selectedCategoryId)}
+                  onClick={() => {
+                    if (product?.id) {
+                      addCategoryMutation.mutate(selectedCategoryId);
+                    } else {
+                      toast.error("Vui lòng đợi sản phẩm tải xong");
+                    }
+                  }}
                   disabled={
-                    !selectedCategoryId || addCategoryMutation.isPending
+                    selectedCategoryId === 0 || 
+                    addCategoryMutation.isPending ||
+                    isLoading ||
+                    !product?.id
                   }
                 >
-                  Thêm
+                  Thêm 
                 </Button>
               </div>
             )}
@@ -651,7 +963,13 @@ export function ProductDetailPage() {
                 >
                   {pc.category.name}
                   <button
-                    onClick={() => removeCategoryMutation.mutate(pc.categoryId)}
+                    onClick={() => {
+                      if (product?.id) {
+                        removeCategoryMutation.mutate(pc.categoryId);
+                      } else {
+                        toast.error("Vui lòng đợi sản phẩm tải xong");
+                      }
+                    }}
                     className="hover:text-red-500"
                   >
                     ×
@@ -698,9 +1016,18 @@ export function ProductDetailPage() {
                   </SelectContent>
                 </Select>
                 <Button
-                  onClick={() => addAudienceMutation.mutate(selectedAudienceId)}
+                  onClick={() => {
+                    if (product?.id) {
+                      addAudienceMutation.mutate(selectedAudienceId);
+                    } else {
+                      toast.error("Vui lòng đợi sản phẩm tải xong");
+                    }
+                  }}
                   disabled={
-                    !selectedAudienceId || addAudienceMutation.isPending
+                    selectedAudienceId === 0 || 
+                    addAudienceMutation.isPending ||
+                    isLoading ||
+                    !product?.id
                   }
                 >
                   Thêm
@@ -713,7 +1040,13 @@ export function ProductDetailPage() {
                 <Badge key={pa.audienceId} variant="outline" className="gap-2">
                   {pa.audience.name}
                   <button
-                    onClick={() => removeAudienceMutation.mutate(pa.audienceId)}
+                    onClick={() => {
+                      if (product?.id) {
+                        removeAudienceMutation.mutate(pa.audienceId);
+                      } else {
+                        toast.error("Vui lòng đợi sản phẩm tải xong");
+                      }
+                    }}
                     className="hover:text-red-500"
                   >
                     ×
@@ -758,8 +1091,19 @@ export function ProductDetailPage() {
                   </SelectContent>
                 </Select>
                 <Button
-                  onClick={() => addSportMutation.mutate(selectedSportId)}
-                  disabled={!selectedSportId || addSportMutation.isPending}
+                  onClick={() => {
+                    if (product?.id) {
+                      addSportMutation.mutate(selectedSportId);
+                    } else {
+                      toast.error("Vui lòng đợi sản phẩm tải xong");
+                    }
+                  }}
+                  disabled={
+                    selectedSportId === 0 || 
+                    addSportMutation.isPending ||
+                    isLoading ||
+                    !product?.id
+                  }
                 >
                   Thêm
                 </Button>
@@ -771,7 +1115,13 @@ export function ProductDetailPage() {
                 <Badge key={ps.sportId} variant="outline" className="gap-2">
                   {ps.sport.name}
                   <button
-                    onClick={() => removeSportMutation.mutate(ps.sportId)}
+                    onClick={() => {
+                      if (product?.id) {
+                        removeSportMutation.mutate(ps.sportId);
+                      } else {
+                        toast.error("Vui lòng đợi sản phẩm tải xong");
+                      }
+                    }}
                     className="hover:text-red-500"
                   >
                     ×
@@ -820,11 +1170,17 @@ export function ProductDetailPage() {
                             size="sm"
                             variant={isAdded ? "secondary" : "outline"}
                             disabled={
-                              isAdded || addAttributeValueMutation.isPending
+                              isAdded || 
+                              addAttributeValueMutation.isPending ||
+                              !product?.id
                             }
-                            onClick={() =>
-                              addAttributeValueMutation.mutate(val.id)
-                            }
+                            onClick={() => {
+                              if (product?.id) {
+                                addAttributeValueMutation.mutate(val.id);
+                              } else {
+                                toast.error("Vui lòng đợi sản phẩm tải xong");
+                              }
+                            }}
                           >
                             {isAdded && "✓ "}
                             {val.value}
@@ -881,11 +1237,15 @@ export function ProductDetailPage() {
                       >
                         {pav.attributeValue.value}
                         <button
-                          onClick={() =>
-                            removeAttributeValueMutation.mutate(
-                              pav.attributeValueId
-                            )
-                          }
+                          onClick={() => {
+                            if (product?.id) {
+                              removeAttributeValueMutation.mutate(
+                                pav.attributeValueId
+                              );
+                            } else {
+                              toast.error("Vui lòng đợi sản phẩm tải xong");
+                            }
+                          }}
                           className="hover:text-red-500"
                         >
                           ×
@@ -958,23 +1318,34 @@ export function ProductDetailPage() {
                   name="sizeId"
                   control={variantForm.control}
                   rules={{ required: "Vui lòng chọn kích thước" }}
-                  render={({ field }) => (
-                    <Select
-                      value={field.value?.toString()}
-                      onValueChange={(value) => field.onChange(Number(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn kích thước" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sizes.map((size) => (
-                          <SelectItem key={size.id} value={size.id.toString()}>
-                            {size.name} + {size.chartType}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                  render={({ field }) => {
+                    const currentValue = field.value?.toString() || "0";
+                    console.log("Size Select - Current field value:", {
+                      fieldValue: field.value,
+                      currentValue,
+                      sizesAvailable: sizes.length,
+                    });
+                    return (
+                      <Select
+                        value={currentValue === "0" ? undefined : currentValue}
+                        onValueChange={(value) => {
+                          console.log("Size Select - Value changed:", value);
+                          field.onChange(Number(value));
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn kích thước" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sizes.map((size: Size) => (
+                            <SelectItem key={size.id} value={size.id.toString()}>
+                              {size.name} {size.chartType ? `(${size.chartType})` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  }}
                 />
               </div>
 

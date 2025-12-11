@@ -1,30 +1,39 @@
 import React from "react";
 import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ImagePreviewModalProps {
-  src: string | null;
+  imageUrl: string | null;
   onClose: () => void;
 }
 
-export function ImagePreviewModal({ src, onClose }: ImagePreviewModalProps) {
-  if (!src) return null;
+export function ImagePreviewModal({
+  imageUrl,
+  onClose,
+}: ImagePreviewModalProps) {
+  if (!imageUrl) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999]"
       onClick={onClose}
     >
-      <img
-        src={src}
-        alt="Preview"
-        className="max-w-full max-h-full rounded-lg shadow-2xl"
-      />
-      <button
-        className="absolute top-4 right-4 text-white bg-black/50 p-2 rounded-full hover:bg-black/70"
-        onClick={onClose}
-      >
-        <X className="w-6 h-6" />
-      </button>
+      <div className="relative max-w-[90vw] max-h-[90vh]">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="absolute -top-10 right-0 text-white hover:bg-white/20"
+        >
+          <X className="h-6 w-6" />
+        </Button>
+        <img
+          src={imageUrl}
+          alt="preview"
+          className="max-w-full max-h-[90vh] rounded-lg object-contain"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
     </div>
   );
 }

@@ -74,7 +74,13 @@ export class ProductsAPI {
     slug: string
   ): Promise<ProductDetailResponse> {
     const response = await api.get(`/api/products/slug/${slug}`);
-    return response.data.data;
+    // API returns { success: boolean; data: ProductDetailResponse[] }
+    // Extract the first element from the array
+    const productData = response.data.data;
+    if (Array.isArray(productData) && productData.length > 0) {
+      return productData[0];
+    }
+    throw new Error("Product not found");
   }
 }
 

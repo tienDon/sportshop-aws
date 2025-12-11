@@ -7,6 +7,7 @@ import ShopByAudience from "@/components/home/ShopByAudience";
 import NewArrivals from "@/components/home/NewArrivals";
 import PromoBanner from "@/components/home/PromoBanner";
 import Container from "@/components/ui/Container";
+import Footer from "@/components/layout/Footer";
 
 const HomePage = () => {
   return (
@@ -35,6 +36,8 @@ const HomePage = () => {
         {/* Mua sắm theo môn thể thao */}
         {/* <ShopBySport /> */}
       </Container>
+
+      <Footer />
     </div>
   );
 };

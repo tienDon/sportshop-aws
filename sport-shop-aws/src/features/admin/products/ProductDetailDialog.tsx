@@ -8,7 +8,7 @@ import {
   type UpdateVariantDTO,
 } from "@/services/productAdminApi";
 import { colorApi } from "@/services/colorApi";
-import { sizeApi } from "@/services/sizeApi";
+import { sizeApi, type Size } from "@/services/sizeApi";
 import {
   Dialog,
   DialogContent,
@@ -65,7 +65,35 @@ export function ProductDetailDialog({
   });
 
   const colors = colorsData?.data || [];
-  const sizes = sizesData?.data || [];
+  
+  // Normalize sizes data - handle multiple response structures
+  const sizes: Size[] = (() => {
+    if (!sizesData) {
+      console.log("ProductDetailDialog: sizesData is null/undefined");
+      return [];
+    }
+    if (Array.isArray(sizesData)) {
+      console.log("ProductDetailDialog: sizesData is array", sizesData.length);
+      return sizesData as Size[];
+    }
+    if (Array.isArray(sizesData.data)) {
+      console.log("ProductDetailDialog: sizesData.data is array", sizesData.data.length);
+      return sizesData.data as Size[];
+    }
+    const sizesDataAny = sizesData as any;
+    if (sizesDataAny.sizes && Array.isArray(sizesDataAny.sizes)) {
+      console.log("ProductDetailDialog: sizesDataAny.sizes is array", sizesDataAny.sizes.length);
+      return sizesDataAny.sizes as Size[];
+    }
+    console.warn("ProductDetailDialog: Could not normalize sizes data", sizesData);
+    return [];
+  })();
+  
+  // Debug: Log sizes for troubleshooting
+  console.log("ProductDetailDialog: Final sizes array", {
+    length: sizes.length,
+    sizes: sizes.map(s => ({ id: s.id, name: s.name, chartType: s.chartType })),
+  });
 
   // Variant form
   const variantForm = useForm<CreateVariantDTO>({
@@ -356,6 +384,7 @@ export function ProductDetailDialog({
                       <th className="p-3 text-right">Giá</th>
                       <th className="p-3 text-right">Tồn kho</th>
                       <th className="p-3 text-left">SKU</th>
+                      <th className="p-3 text-left">Hình ảnh</th>
                       <th className="p-3 text-right">Hành động</th>
                     </tr>
                   </thead>
@@ -363,65 +392,103 @@ export function ProductDetailDialog({
                     {!product.variants || product.variants.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={6}
+                          colSpan={7}
                           className="p-8 text-center text-muted-foreground"
                         >
                           Chưa có biến thể nào
                         </td>
                       </tr>
                     ) : (
-                      product.variants.map((variant) => (
-                        <tr
-                          key={variant.id}
-                          className="border-b hover:bg-muted/50"
-                        >
-                          <td className="p-3">
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-6 h-6 rounded border"
-                                style={{
-                                  backgroundColor: variant.color.hexCode,
-                                }}
-                              />
-                              <span>{variant.color.name}</span>
-                            </div>
-                          </td>
-                          <td className="p-3">{variant.size.name}</td>
-                          <td className="p-3 text-right">
-                            {Number(variant.price).toLocaleString("vi-VN")}đ
-                          </td>
-                          <td className="p-3 text-right">
-                            <Badge
-                              variant={
-                                variant.stockQuantity > 0
-                                  ? "default"
-                                  : "secondary"
-                              }
-                            >
-                              {variant.stockQuantity}
-                            </Badge>
-                          </td>
-                          <td className="p-3">{variant.sku || "-"}</td>
-                          <td className="p-3 text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditVariant(variant)}
+                      product.variants.map((variant) => {
+                        // Fallback: Find color from colors array if variant.color is not available
+                        // Backend may return colorId but not color object
+                        const color = variant.color || colors.find((c) => c.id === variant.colorId);
+                        
+                        return (
+                          <tr
+                            key={variant.id}
+                            className="border-b hover:bg-muted/50"
+                          >
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                {color ? (
+                                  <>
+                                    <div
+                                      className="w-6 h-6 rounded border"
+                                      style={{
+                                        backgroundColor: color.hexCode || "#000000",
+                                      }}
+                                    />
+                                    <span>{color.name || "—"}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    {variant.colorId ? `Color ID: ${variant.colorId}` : "—"}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3">{variant.sizeName + " " + sizes.find((s) => s.id === variant.sizeId)?.chartType || variant.size?.name + " " + sizes.find((s) => s.id === variant.sizeId)?.chartType  || "—"}</td>
+                            <td className="p-3 text-right">
+                              {Number(variant.price).toLocaleString("vi-VN")}đ
+                            </td>
+                            <td className="p-3 text-right">
+                              <Badge
+                                variant={
+                                  variant.stockQuantity > 0
+                                    ? "default"
+                                    : "secondary"
+                                }
                               >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteVariant(variant.id)}
-                              >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                                {variant.stockQuantity}
+                              </Badge>
+                            </td>
+                            <td className="p-3">{variant.sku || "-"}</td>
+                            <td className="p-3">
+                              {variant.imageUrls && variant.imageUrls.length > 0 ? (
+                                <div className="flex gap-1">
+                                  {variant.imageUrls.slice(0, 3).map((url, idx) => (
+                                    <img
+                                      key={idx}
+                                      src={url}
+                                      alt={`Variant ${variant.id} image ${idx + 1}`}
+                                      className="w-10 h-10 object-cover rounded border"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = "none";
+                                      }}
+                                    />
+                                  ))}
+                                  {variant.imageUrls.length > 3 && (
+                                    <div className="w-10 h-10 flex items-center justify-center bg-muted rounded border text-xs">
+                                      +{variant.imageUrls.length - 3}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">—</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditVariant(variant)}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteVariant(variant.id)}
+                                >
+                                  <Trash2 className="w-4 h-4 text-red-500" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -527,11 +594,17 @@ export function ProductDetailDialog({
                         <SelectValue placeholder="Chọn kích thước" />
                       </SelectTrigger>
                       <SelectContent>
-                        {sizes.map((size) => (
-                          <SelectItem key={size.id} value={size.id.toString()}>
-                            {size.name}
+                        {sizes.length === 0 ? (
+                          <SelectItem value="" disabled>
+                            Không có kích thước nào
                           </SelectItem>
-                        ))}
+                        ) : (
+                          sizes.map((size) => (
+                            <SelectItem key={size.id} value={size.id.toString()}>
+                              {size.name} {size.chartType ? `(${size.chartType})` : ""}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   )}

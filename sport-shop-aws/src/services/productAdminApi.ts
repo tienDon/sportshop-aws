@@ -27,15 +27,16 @@ export interface Size {
 
 export interface ProductVariant {
   id: number;
-  productId: number;
+  productId?: number;
   colorId: number;
-  sizeId: number;
+  sizeId?: number;
   price: number;
   stockQuantity: number;
   sku: string | null;
   imageUrls: string[] | null;
-  color: Color;
-  size: Size;
+  color?: Color; // Optional - backend may not always include this
+  size?: Size; // Optional - backend may not always include this
+  sizeName?: string; // Some APIs return sizeName instead of size object
 }
 
 export interface AttributeValue {
@@ -150,21 +151,58 @@ export interface UpdateVariantDTO {
   imageUrls?: string[];
 }
 
+export interface PaginationInfo {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export const productAdminApi = {
   // Get all products for admin
   getAll: async () => {
-    const { data } = await api.get<{ success: boolean; data: Product[] }>(
-      "/api/products/admin/all"
-    );
+    const { data } = await api.get<{
+      success: boolean;
+      data: Product[];
+      pagination: PaginationInfo;
+    }>("/api/products");
     return data;
   },
 
-  // Get product by ID with full details
-  getById: async (id: number) => {
-    const { data } = await api.get<{ success: boolean; data: Product }>(
-      `/api/products/${id}`
-    );
-    return data;
+  // Get product by slug with full details
+  // Note: API returns { success: boolean; data: Product[] } (array)
+  getById: async (slug: string) => {
+    try {
+      console.log("API: Fetching product by slug:", slug);
+      const response = await api.get<{ success: boolean; data: Product[] }>(
+        `/api/products/slug/${slug}`
+      );
+      console.log("API: Response received:", response);
+      console.log("API: Response data:", response.data);
+      if (response.data?.data?.[0]) {
+        const product = response.data.data[0];
+        console.log("API: Product structure check:", {
+          hasProductCategories: !!product.productCategories,
+          productCategoriesLength: product.productCategories?.length || 0,
+          hasProductAudiences: !!product.productAudiences,
+          productAudiencesLength: product.productAudiences?.length || 0,
+          hasProductSports: !!product.productSports,
+          productSportsLength: product.productSports?.length || 0,
+          productKeys: Object.keys(product),
+          // Check for alternative field names
+          hasCategories: 'categories' in product,
+          hasAudiences: 'audiences' in product,
+          hasSports: 'sports' in product,
+          fullProduct: JSON.stringify(product, null, 2),
+        });
+      }
+      // API returns array, but we expect single product, so return the structure
+      // The component will handle extracting the first element
+      return response.data;
+    } catch (error) {
+      console.error("API: Error fetching product by slug:", error);
+      throw error;
+    }
   },
 
   // Create new product
@@ -231,11 +269,19 @@ export const productAdminApi = {
 
   // Attribute values operations
   addAttributeValue: async (productId: number, attributeValueId: number) => {
-    const { data } = await api.post<{ success: boolean; data: any }>(
-      `/api/products/${productId}/attribute-values`,
-      { attributeValueId }
-    );
-    return data;
+    console.log("API: addAttributeValue", { productId, attributeValueId });
+    try {
+      const { data } = await api.post<{ success: boolean; data: any }>(
+        `/api/products/${productId}/attribute-values`,
+        { attributeValueId }
+      );
+      console.log("API: addAttributeValue success", data);
+      return data;
+    } catch (error: any) {
+      console.error("API: addAttributeValue error", error);
+      console.error("API: addAttributeValue error response", error?.response);
+      throw error;
+    }
   },
 
   // Relations operations
@@ -244,27 +290,51 @@ export const productAdminApi = {
     categoryId: number,
     isPrimary: boolean = false
   ) => {
-    const { data } = await api.post<{ success: boolean; data: any }>(
-      `/api/products/${productId}/categories`,
-      { categoryId, isPrimary }
-    );
-    return data;
+    console.log("API: addCategory", { productId, categoryId, isPrimary });
+    try {
+      const { data } = await api.post<{ success: boolean; data: any }>(
+        `/api/products/${productId}/categories`,
+        { categoryId, isPrimary }
+      );
+      console.log("API: addCategory success", data);
+      return data;
+    } catch (error: any) {
+      console.error("API: addCategory error", error);
+      console.error("API: addCategory error response", error?.response);
+      throw error;
+    }
   },
 
   addAudience: async (productId: number, audienceId: number) => {
-    const { data } = await api.post<{ success: boolean; data: any }>(
-      `/api/products/${productId}/audiences`,
-      { audienceId }
-    );
-    return data;
+    console.log("API: addAudience", { productId, audienceId });
+    try {
+      const { data } = await api.post<{ success: boolean; data: any }>(
+        `/api/products/${productId}/audiences`,
+        { audienceId }
+      );
+      console.log("API: addAudience success", data);
+      return data;
+    } catch (error: any) {
+      console.error("API: addAudience error", error);
+      console.error("API: addAudience error response", error?.response);
+      throw error;
+    }
   },
 
   addSport: async (productId: number, sportId: number) => {
-    const { data } = await api.post<{ success: boolean; data: any }>(
-      `/api/products/${productId}/sports`,
-      { sportId }
-    );
-    return data;
+    console.log("API: addSport", { productId, sportId });
+    try {
+      const { data } = await api.post<{ success: boolean; data: any }>(
+        `/api/products/${productId}/sports`,
+        { sportId }
+      );
+      console.log("API: addSport success", data);
+      return data;
+    } catch (error: any) {
+      console.error("API: addSport error", error);
+      console.error("API: addSport error response", error?.response);
+      throw error;
+    }
   },
 
   // Delete relations
