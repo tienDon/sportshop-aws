@@ -56,14 +56,14 @@ const CheckoutPage = () => {
   // Set defaults
   useEffect(() => {
     if (addresses && addresses.length > 0 && !selectedAddressId) {
-      const defaultAddr = addresses.find((a) => a.is_default) || addresses[0];
+      const defaultAddr = addresses.find((a) => a.defaultAddress) || addresses[0];
       setSelectedAddressId(defaultAddr.id);
     }
   }, [addresses, selectedAddressId]);
 
   useEffect(() => {
     if (phones && phones.length > 0 && !selectedPhoneId) {
-      const defaultPhone = phones.find((p) => p.is_default) || phones[0];
+      const defaultPhone = phones.find((p) => p.defaultPhone) || phones[0];
       setSelectedPhoneId(defaultPhone.id);
     }
   }, [phones, selectedPhoneId]);
@@ -198,8 +198,8 @@ const CheckoutPage = () => {
                       <Button
                         onClick={() =>
                           createAddressMutation.mutate({
-                            address_detail: newAddress,
-                            is_default: true,
+                            addressDetail: newAddress,
+                            defaultAddress: true,
                           })
                         }
                         disabled={
@@ -240,8 +240,8 @@ const CheckoutPage = () => {
                         htmlFor={`addr-${addr.id}`}
                         className="flex-1 cursor-pointer"
                       >
-                        {addr.address_detail}{" "}
-                        {addr.is_default && (
+                        {addr.addressDetail}{" "}
+                        {addr.defaultAddress && (
                           <span className="text-xs text-blue-600 font-medium ml-2">
                             (Mặc định)
                           </span>
@@ -286,8 +286,8 @@ const CheckoutPage = () => {
                       <Button
                         onClick={() =>
                           createPhoneMutation.mutate({
-                            phone_number: newPhone,
-                            is_default: true,
+                            phoneNumber: newPhone,
+                            defaultPhone: true,
                           })
                         }
                         disabled={createPhoneMutation.isPending || !newPhone}
@@ -326,8 +326,8 @@ const CheckoutPage = () => {
                         htmlFor={`phone-${phone.id}`}
                         className="flex-1 cursor-pointer"
                       >
-                        {phone.phone_number}{" "}
-                        {phone.is_default && (
+                        {phone.phoneNumber}{" "}
+                        {phone.defaultPhone && (
                           <span className="text-xs text-blue-600 font-medium ml-2">
                             (Mặc định)
                           </span>

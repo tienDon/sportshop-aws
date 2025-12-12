@@ -139,8 +139,8 @@ const ProfilePage = () => {
                     <Button
                       onClick={() =>
                         createAddressMutation.mutate({
-                          address_detail: newAddress,
-                          is_default: addresses?.length === 0,
+                          addressDetail: newAddress,
+                          defaultAddress: addresses?.length === 0,
                         })
                       }
                       disabled={createAddressMutation.isPending || !newAddress}
@@ -166,8 +166,8 @@ const ProfilePage = () => {
                     className="flex justify-between items-center border p-3 rounded-md"
                   >
                     <div>
-                      <p className="font-medium">{addr.address_detail}</p>
-                      {addr.is_default && (
+                      <p className="font-medium">{addr.addressDetail}</p>
+                      {addr.defaultAddress && (
                         <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
                           Mặc định
                         </span>
@@ -225,8 +225,8 @@ const ProfilePage = () => {
                     <Button
                       onClick={() =>
                         createPhoneMutation.mutate({
-                          phone_number: newPhone,
-                          is_default: phones?.length === 0,
+                          phoneNumber: newPhone,
+                          defaultPhone: phones?.length === 0,
                         })
                       }
                       disabled={createPhoneMutation.isPending || !newPhone}
@@ -252,8 +252,8 @@ const ProfilePage = () => {
                     className="flex justify-between items-center border p-3 rounded-md"
                   >
                     <div>
-                      <p className="font-medium">{phone.phone_number}</p>
-                      {phone.is_default && (
+                      <p className="font-medium">{phone.phoneNumber}</p>
+                      {phone.defaultPhone && (
                         <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
                           Mặc định
                         </span>

@@ -3,15 +3,15 @@ import api from "@/lib/axios";
 export interface UserAddress {
   id: number;
   user_id: number;
-  address_detail: string;
-  is_default: boolean;
+  addressDetail: string;
+  defaultAddress: boolean;
 }
 
 export interface UserPhone {
   id: number;
   user_id: number;
-  phone_number: string;
-  is_default: boolean;
+  phoneNumber: string;
+  defaultPhone: boolean;
 }
 export type AdminUser = {
   id: number;
@@ -30,35 +30,48 @@ export const UserAPI = {
   getAddresses: async (): Promise<UserAddress[]> => {
     try {
       const response = await api.get("/api/user/addresses");
-      // Ensure we always return an array, never undefined
-      return Array.isArray(response.data?.data) ? response.data.data : [];
+      // API trả về array trực tiếp hoặc có wrapper { data: [...] }
+      const data = response.data;
+      if (Array.isArray(data)) {
+        return data;
+      }
+      if (Array.isArray(data?.data)) {
+        return data.data;
+      }
+      return [];
     } catch (error) {
       console.error("Error fetching addresses:", error);
-      // Return empty array on error to prevent undefined
       return [];
     }
   },
 
   createAddress: async (data: {
-    address_detail: string;
-    is_default?: boolean;
+    addressDetail?: string;
+    defaultAddress?: boolean;
   }): Promise<UserAddress> => {
     const response = await api.post("/api/user/addresses", data);
-    if (!response.data?.data) {
+    // API có thể trả về object trực tiếp hoặc có wrapper { data: {...} }
+    const result = response.data?.data || response.data;
+    if (!result) {
       throw new Error("Invalid response from create address API");
     }
-    return response.data.data as UserAddress;
+    return result as UserAddress;
   },
 
   updateAddress: async (
     id: number,
-    data: { address_detail?: string; is_default?: boolean }
+    data: {
+      addressDetail?: string;
+      defaultAddress?: boolean;
+    }
   ): Promise<UserAddress> => {
     const response = await api.put(`/api/user/addresses/${id}`, data);
-    if (!response.data?.data) {
+    // API có thể trả về object trực tiếp hoặc có wrapper { data: {...} }
+    const result = response.data?.data || response.data;
+    if (!result) {
       throw new Error("Invalid response from update address API");
     }
-    return response.data.data as UserAddress;
+    return result as UserAddress;
   },
 
   deleteAddress: async (id: number) => {
@@ -69,32 +82,45 @@ export const UserAPI = {
   getPhones: async (): Promise<UserPhone[]> => {
     try {
       const response = await api.get("/api/user/phones");
-      // Ensure we always return an array, never undefined
-      return Array.isArray(response.data?.data) ? response.data.data : [];
+      // API trả về array trực tiếp hoặc có wrapper { data: [...] }
+      const data = response.data;
+      if (Array.isArray(data)) {
+        return data;
+      }
+      if (Array.isArray(data?.data)) {
+        return data.data;
+      }
+      return [];
     } catch (error) {
       console.error("Error fetching phones:", error);
-      // Return empty array on error to prevent undefined
       return [];
     }
   },
 
-  createPhone: async (data: { phone_number: string; is_default?: boolean }): Promise<UserPhone> => {
+  createPhone: async (data: {
+    phoneNumber: string;
+    defaultPhone?: boolean;
+  }): Promise<UserPhone> => {
     const response = await api.post("/api/user/phones", data);
-    if (!response.data?.data) {
+    // API có thể trả về object trực tiếp hoặc có wrapper { data: {...} }
+    const result = response.data?.data || response.data;
+    if (!result) {
       throw new Error("Invalid response from create phone API");
     }
-    return response.data.data as UserPhone;
+    return result as UserPhone;
   },
 
   updatePhone: async (
     id: number,
-    data: { phone_number?: string; is_default?: boolean }
+    data: { phoneNumber?: string; defaultPhone?: boolean }
   ): Promise<UserPhone> => {
     const response = await api.put(`/api/user/phones/${id}`, data);
-    if (!response.data?.data) {
+    // API có thể trả về object trực tiếp hoặc có wrapper { data: {...} }
+    const result = response.data?.data || response.data;
+    if (!result) {
       throw new Error("Invalid response from update phone API");
     }
-    return response.data.data as UserPhone;
+    return result as UserPhone;
   },
 
   deletePhone: async (id: number) => {

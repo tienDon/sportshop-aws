@@ -37,7 +37,6 @@ const HomePage = () => {
         {/* <ShopBySport /> */}
       </Container>
 
-      <Footer />
     </div>
   );
 };
