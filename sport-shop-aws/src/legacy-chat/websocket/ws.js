@@ -3,8 +3,7 @@ import SockJS from "sockjs-client";
 import Stomp from "stompjs";
 
 // ⭐ Dùng đúng endpoint WS của BE (giống FE cũ, KHÔNG /api phía sau)
-const WS_URL =
-  "http://Sportshop-backend-env.eba-rmvficqm.ap-southeast-1.elasticbeanstalk.com/ws/chat";
+const WS_URL = "https://api.donvt.me/ws/chat";
 
 class WebSocketClient {
   stomp = null;

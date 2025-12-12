@@ -2,8 +2,7 @@
 import SockJS from "sockjs-client";
 import Stomp from "stompjs";
 
-const WS_URL =
-  "http://http://sportshop-backend-env.eba-rmvficqm.ap-southeast-1.elasticbeanstalk.com/ws/chat/ws/chat";
+const WS_URL = "https://api.donvt.me/ws/chat";
 
 class WebSocketClient {
   private stomp: any = null;

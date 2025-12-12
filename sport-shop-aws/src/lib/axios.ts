@@ -3,8 +3,8 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL:
-    import.meta.env.VITE_API_URL ||
-    "http://Sportshop-backend-env.eba-rmvficqm.ap-southeast-1.elasticbeanstalk.com",
+    // import.meta.env.VITE_API_URL ||
+    "https://api.donvt.me",
   withCredentials: true, // Quan trọng cho cookies
 });
 
@@ -72,6 +72,9 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       console.log("Access token expired, attempting to refresh...");
+      console.log(
+        "Refresh token request - cookies will be sent automatically with withCredentials: true"
+      );
 
       try {
         const res = await api.post("/api/auth/refresh-token");
