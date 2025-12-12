@@ -244,8 +244,8 @@ export function AttributeManager() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="h-full flex flex-col space-y-4 min-h-0">
+      <div className="flex items-center justify-between flex-shrink-0">
         <h2 className="text-2xl font-bold tracking-tight">
           Quản lý Thuộc tính
         </h2>
@@ -255,8 +255,8 @@ export function AttributeManager() {
         </Button>
       </div>
 
-      <div className="rounded-md border">
-        <div className="relative w-full overflow-auto">
+      <div className="rounded-md border flex-1 flex flex-col min-h-0">
+        <div className="relative w-full overflow-auto flex-1">
           {attributes.length === 0 ? (
             <div className="h-96 flex items-center justify-center text-muted-foreground">
               Không có dữ liệu.

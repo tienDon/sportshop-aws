@@ -51,8 +51,8 @@ export function ProductManager() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 h-full flex flex-col">
+      <div className="flex items-center justify-between flex-shrink-0">
         <h2 className="text-2xl font-bold tracking-tight">Quản lý Sản phẩm</h2>
         <Button onClick={() => setIsCreateDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
@@ -60,11 +60,11 @@ export function ProductManager() {
         </Button>
       </div>
 
-      <div className="rounded-md border">
-        <div className="relative w-full overflow-auto">
+      <div className="rounded-md border flex-1 flex flex-col min-h-0">
+        <div className="relative w-full overflow-auto flex-1">
           <table className="w-full caption-bottom text-sm">
-            <thead className="[&_tr]:border-b">
-              <tr className="border-b transition-colors hover:bg-muted/50">
+            <thead className="[&_tr]:border-b sticky top-0 bg-background z-10">
+              <tr className="border-b transition-colors hover:bg-muted/50 bg-background">
                 <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground w-20">
                   ID
                 </th>

@@ -1,4 +1,4 @@
-import { useLocation, useParams } from "react-router";
+import { useLocation } from "react-router";
 import { DashboardOverview } from "@/features/admin/dashboard/DashboardOverview";
 import { BrandManager } from "@/features/admin/brands/BrandManager";
 import { SportManager } from "@/features/admin/sports/SportManager";
@@ -22,9 +22,23 @@ export function AdminDashboardContent({
   const location = useLocation();
 
   // Check if we're on product detail page (using slug)
+  // Pattern: /admin/products/{slug}
+  // Slug có thể chứa: chữ cái, số, dấu gạch ngang, dấu gạch dưới
+  // Cải thiện regex để handle URL encoding và trailing slash
   const productDetailMatch = location.pathname.match(
-    /^\/admin\/products\/([^/]+)$/
+    /^\/admin\/products\/([^/?#]+)(?:\/)?$/
   );
+  
+  // Debug logging
+  if (location.pathname.startsWith("/admin/products/")) {
+    console.log("🔍 AdminDashboardContent - Product route detected:", {
+      pathname: location.pathname,
+      match: productDetailMatch,
+      slug: productDetailMatch?.[1],
+      selectedMenu,
+    });
+  }
+  
   if (productDetailMatch) {
     return <ProductDetailPage />;
   }

@@ -115,6 +115,18 @@ const AppInner = () => {
   const location = useLocation();
 
   const isAdminRoute = location.pathname.startsWith("/admin");
+  
+  // Debug: Log routing info
+  useEffect(() => {
+    if (location.pathname.startsWith("/admin")) {
+      console.log("🔍 AppInner - Admin route detected:", {
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash,
+        isAdminRoute,
+      });
+    }
+  }, [location.pathname, location.search, location.hash, isAdminRoute]);
 
   // Initialize auth when app starts
   useEffect(() => {
@@ -173,8 +185,10 @@ const AppInner = () => {
         </Route>
 
         {/* Admin Routes - No Header/Footer */}
-        <Route path="/admin" element={<AdminPage />} />
+        {/* Route cụ thể phải đặt trước route wildcard */}
         <Route path="/admin/legacy-chat" element={<AdminLegacyChat />} />
+        {/* Route /admin/* để handle tất cả các route con của /admin (bao gồm /admin/products/:slug) */}
+        <Route path="/admin/*" element={<AdminPage />} />
 
         {/* Catch-all route */}
         <Route path="*" element={<div>Page not found</div>} />

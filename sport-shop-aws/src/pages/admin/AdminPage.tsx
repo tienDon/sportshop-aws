@@ -24,6 +24,8 @@ export default function AdminDashboard() {
   // Update selectedMenu based on URL
   useEffect(() => {
     const path = location.pathname;
+    console.log("🔍 AdminPage - Pathname changed:", path);
+    
     if (path.startsWith("/admin/products")) {
       setSelectedMenu("products");
     } else if (path.startsWith("/admin/orders")) {

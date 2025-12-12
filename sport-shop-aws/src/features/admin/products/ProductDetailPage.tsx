@@ -97,7 +97,13 @@ export function ProductDetailPage() {
 
   // Log error if any
   if (isError) {
-    console.error("Error fetching product:", error);
+    console.error("❌ Error fetching product:", error);
+    console.error("Error details:", {
+      slug,
+      errorMessage: (error as any)?.message,
+      errorResponse: (error as any)?.response?.data,
+      errorStatus: (error as any)?.response?.status,
+    });
   }
 
   // Extract product from response
@@ -600,9 +606,28 @@ export function ProductDetailPage() {
   }
 
   if (!product) {
+    console.log("⚠️ Product not found:", {
+      slug,
+      isLoading,
+      isError,
+      error,
+      productData,
+    });
+    
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <p className="text-lg text-muted-foreground">Không tìm thấy sản phẩm</p>
+        <p className="text-lg text-muted-foreground">
+          {isError 
+            ? `Lỗi khi tải sản phẩm: ${(error as any)?.response?.data?.message || (error as any)?.message || "Unknown error"}` 
+            : isLoading 
+            ? "Đang tải..." 
+            : "Không tìm thấy sản phẩm"}
+        </p>
+        {isError && (
+          <p className="text-sm text-muted-foreground">
+            Slug: {slug}
+          </p>
+        )}
         <Button onClick={() => navigate("/admin/products")}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
@@ -612,9 +637,9 @@ export function ProductDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full flex flex-col space-y-6 min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -633,8 +658,8 @@ export function ProductDetailPage() {
       </div>
 
       {/* Content */}
-      <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="info" className="w-full flex-1 flex flex-col min-h-0">
+        <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
           <TabsTrigger value="info">Thông tin</TabsTrigger>
           <TabsTrigger value="variants">
             Biến thể ({product.variants?.length || 0})
@@ -644,7 +669,7 @@ export function ProductDetailPage() {
         </TabsList>
 
         {/* Tab: Thông tin sản phẩm */}
-        <TabsContent value="info" className="space-y-4">
+        <TabsContent value="info" className="space-y-4 flex-1 overflow-y-auto min-h-0">
           <form
             onSubmit={productForm.handleSubmit(onSubmitProduct)}
             className="space-y-4 border rounded-lg p-6"
@@ -749,7 +774,7 @@ export function ProductDetailPage() {
         </TabsContent>
 
         {/* Tab: Biến thể */}
-        <TabsContent value="variants" className="space-y-4">
+        <TabsContent value="variants" className="space-y-4 flex-1 overflow-y-auto min-h-0">
           <div className="flex justify-between items-center">
             <p className="text-sm text-muted-foreground">
               Quản lý các biến thể màu sắc và kích thước
@@ -901,7 +926,7 @@ export function ProductDetailPage() {
         </TabsContent>
 
         {/* Tab: Phân loại (Categories, Audiences, Sports) */}
-        <TabsContent value="relations" className="space-y-6">
+        <TabsContent value="relations" className="space-y-6 flex-1 overflow-y-auto min-h-0">
           {/* Categories */}
           <div className="border rounded-lg p-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -1137,7 +1162,7 @@ export function ProductDetailPage() {
         </TabsContent>
 
         {/* Tab: Thuộc tính */}
-        <TabsContent value="attributes" className="space-y-4">
+        <TabsContent value="attributes" className="space-y-4 flex-1 overflow-y-auto min-h-0">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               Các thuộc tính của sản phẩm

@@ -325,8 +325,8 @@ export function CategoryManager() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 flex-shrink-0">
         <h2 className="text-2xl font-bold tracking-tight">Quản lý Danh mục</h2>
         <Button onClick={handleCreateCategory}>
           <Plus className="w-4 h-4 mr-2" />
@@ -334,11 +334,11 @@ export function CategoryManager() {
         </Button>
       </div>
 
-      <div className="rounded-md border">
-        <div className="relative w-full overflow-auto">
+      <div className="rounded-md border flex-1 overflow-hidden">
+        <div className="relative w-full h-full overflow-auto">
           <table className="w-full caption-bottom text-sm">
-            <thead className="[&_tr]:border-b">
-              <tr className="border-b transition-colors hover:bg-muted/50">
+            <thead className="[&_tr]:border-b sticky top-0 bg-background z-10 shadow-sm">
+              <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                 <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
                   ID
                 </th>

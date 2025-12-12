@@ -164,8 +164,8 @@ export function SizeManager() {
   }
 
   return (
-    <div className="flex flex-col h-full gap-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
+    <div className="h-full flex flex-col gap-4 min-h-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 flex-shrink-0">
         <h2 className="text-2xl font-bold tracking-tight">Quản lý Kích cỡ</h2>
         <div className="flex items-center gap-2">
           {/* Filter Select */}
