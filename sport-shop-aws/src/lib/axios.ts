@@ -4,7 +4,7 @@ import axios from "axios";
 const api = axios.create({
   baseURL:
     // import.meta.env.VITE_API_URL ||
-    "http://Sportshop-backend-env.eba-rmvficqm.ap-southeast-1.elasticbeanstalk.com",
+    "https://api.donvt.me",
   withCredentials: true, // Quan trọng cho cookies
 });
 
@@ -72,8 +72,10 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       console.log("Access token expired, attempting to refresh...");
-      console.log("Refresh token request - cookies will be sent automatically with withCredentials: true");
-      
+      console.log(
+        "Refresh token request - cookies will be sent automatically with withCredentials: true"
+      );
+
       try {
         // Refresh token API sẽ tự động sử dụng refreshToken từ cookie (httpOnly)
         // Không cần gửi refreshToken trong body vì backend đọc từ cookie
@@ -81,10 +83,10 @@ api.interceptors.response.use(
 
         if (res.data.success && res.data.accessToken) {
           const accessToken = res.data.accessToken;
-          
+
           // Cập nhật token trong store
           useAuthStore.getState().setAccessToken(accessToken);
-          
+
           // Cập nhật sessionStorage (đồng bộ với useAuthStore.refreshToken)
           try {
             sessionStorage.setItem("token", accessToken);
@@ -93,27 +95,27 @@ api.interceptors.response.use(
           }
 
           console.log("Token refreshed successfully");
-          
+
           // Xử lý queue và retry request ban đầu
           processQueue(null, accessToken);
           originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
-          
+
           return api(originalRequest);
         } else {
           throw new Error("Refresh token failed: Invalid response");
         }
       } catch (refreshError: any) {
         console.error("Refresh token failed:", refreshError);
-        
+
         // Xử lý queue với error
         processQueue(refreshError, null);
-        
+
         // Clear auth state
         useAuthStore.getState().clearState();
-        
+
         // Redirect to login page nếu cần
         // window.location.href = "/login";
-        
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

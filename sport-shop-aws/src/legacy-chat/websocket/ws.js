@@ -4,7 +4,7 @@ import Stomp from "stompjs";
 
 // ⭐ Dùng đúng endpoint WS của BE (giống FE cũ, KHÔNG /api phía sau)
 const WS_URL =
-  "http://Sportshop-backend-env.eba-rmvficqm.ap-southeast-1.elasticbeanstalk.com/ws/chat";
+  "https://api.donvt.me/api/ws/chat";
 
 class WebSocketClient {
   stomp = null;
