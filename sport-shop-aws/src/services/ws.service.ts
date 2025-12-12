@@ -2,7 +2,7 @@
 import SockJS from "sockjs-client";
 import Stomp from "stompjs";
 
-const WS_URL = "https://api.donvt.me/api/ws/chat/ws/chat";
+const WS_URL = "https://api.donvt.me/ws/chat";
 
 class WebSocketClient {
   private stomp: any = null;
